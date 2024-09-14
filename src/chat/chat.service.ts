@@ -1,10 +1,11 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Inject, Injectable, Logger, forwardRef } from '@nestjs/common';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { Message } from 'schemas/message.schema';
 import { ValidationLogTracer } from 'schemas/validation-tracer';
 import { Utils } from 'utils/helper-methods';
+import { ChatGateway } from './chat-gateway';
 
 @Injectable()
 export class ChatService {
@@ -13,6 +14,8 @@ export class ChatService {
 
   constructor(
     @InjectModel(Message.name) private chatModel: Model<Message>,
+    @Inject(forwardRef(() => ChatGateway))
+    private readonly chatGateway: ChatGateway, // Inject ChatGateway
     private readonly eventEmitter: EventEmitter2,
   ) {
     this.validationLog = new Utils(this.eventEmitter);
@@ -20,8 +23,11 @@ export class ChatService {
 
   // Save a chat message
   async saveMessage(user: string, message: string): Promise<Message> {
-    const newMessage = new this.chatModel({ user, message });
-    return newMessage.save();
+    const newMessage = new this.chatModel({ senderId: user, message });
+    const savedMessage = await newMessage.save();
+    // Emit the message after saving
+    this.chatGateway.emitChatMessage(savedMessage);
+    return savedMessage;
   }
 
   // Retrieve the last 50 chat messages
