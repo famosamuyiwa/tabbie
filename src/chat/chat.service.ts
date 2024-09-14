@@ -1,4 +1,10 @@
-import { Inject, Injectable, Logger, forwardRef } from '@nestjs/common';
+import {
+  BadRequestException,
+  Inject,
+  Injectable,
+  Logger,
+  forwardRef,
+} from '@nestjs/common';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
@@ -22,9 +28,17 @@ export class ChatService {
   }
 
   // Save a chat message
-  async saveMessage(user: string, message: string): Promise<Message> {
-    const newMessage = new this.chatModel({ senderId: user, message });
-    const savedMessage = await newMessage.save();
+  async saveMessage(senderId: string, message: string): Promise<Message> {
+    const newMessage = new this.chatModel({ senderId, message });
+    const msg = await newMessage.save();
+    return msg;
+  }
+
+  async sendMessage(senderId: string, message: string): Promise<Message> {
+    if (!senderId || !message) {
+      throw new BadRequestException('User and message are required');
+    }
+    const savedMessage = await this.saveMessage(senderId, message);
     // Emit the message after saving
     this.chatGateway.emitChatMessage(savedMessage);
     return savedMessage;

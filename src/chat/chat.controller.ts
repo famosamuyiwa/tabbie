@@ -1,12 +1,7 @@
-import {
-  BadRequestException,
-  Body,
-  Controller,
-  Get,
-  Post,
-} from '@nestjs/common';
+import { Body, Controller, Get, Post } from '@nestjs/common';
 import { ChatService } from './chat.service';
 import { Message } from 'schemas/message.schema';
+import { ChatMessage } from 'interfaces/common';
 
 @Controller('chat')
 export class ChatController {
@@ -18,16 +13,8 @@ export class ChatController {
   }
 
   @Post('send')
-  async sendMessage(@Body() body: { user: string; message: string }) {
-    const { user, message } = body;
-
-    if (!user || !message) {
-      throw new BadRequestException('User and message are required');
-    }
-
-    // Save the message to the database
-    const savedMessage = await this.chatService.saveMessage(user, message);
-
-    return savedMessage;
+  async sendMessage(@Body() body: Partial<ChatMessage>) {
+    const { senderId, message } = body;
+    return this.chatService.sendMessage(senderId, message);
   }
 }

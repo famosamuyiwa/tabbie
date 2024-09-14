@@ -27,7 +27,6 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   async handleConnection(client: Socket) {
     console.log(`Client connected: ${client.id}`);
     const chatHistory = await this.chatService.getChatHistory();
-    console.log(chatHistory.length);
     client.emit('chatHistory', chatHistory); // Send chat history to the client
   }
 
@@ -38,16 +37,18 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
   // Handle incoming messages from clients if using socket.io directly from client instead of http
   @SubscribeMessage('sendMessage')
-  async handleMessage(@MessageBody() data: { user: string; message: string }) {
+  async handleMessage(
+    @MessageBody() data: { senderId: string; message: string },
+  ) {
     const savedMessage = await this.chatService.saveMessage(
-      data.user,
+      data.senderId,
       data.message,
     );
+    this.emitChatMessage(savedMessage); // Broadcast the message to all clients
   }
 
-  async emitChatMessage(message: Message) {
+  emitChatMessage(message: Message) {
     if (this.server) {
-      console.log('why');
       this.server.emit('receiveMessage', message);
     } else {
       this.log.log('Server instance is not available');
