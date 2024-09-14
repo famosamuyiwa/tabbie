@@ -43,11 +43,11 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
       data.user,
       data.message,
     );
-    this.emitChatMessage(savedMessage); // Broadcast the message to all clients
   }
 
   async emitChatMessage(message: Message) {
     if (this.server) {
+      console.log('why');
       this.server.emit('receiveMessage', message);
     } else {
       this.log.log('Server instance is not available');
