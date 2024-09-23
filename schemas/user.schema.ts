@@ -2,7 +2,7 @@ import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import * as bcrypt from 'bcrypt';
 import { NextFunction } from 'express';
 
-@Schema({ collection: 'otp-log', timestamps: true })
+@Schema({ collection: 'users', timestamps: true })
 export class User {
   @Prop({ required: true })
   username: string;
@@ -10,7 +10,7 @@ export class User {
   @Prop({ required: true })
   email: string;
 
-  @Prop({ required: true })
+  @Prop()
   password: string;
 
   @Prop()

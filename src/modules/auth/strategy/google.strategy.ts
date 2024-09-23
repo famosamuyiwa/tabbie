@@ -47,7 +47,6 @@ export class GoogleStrategy extends PassportStrategy(Strategy, 'google') {
           email: userDetails.email,
           avatar: userDetails.picture,
           username: `${userDetails.firstName} ${userDetails.lastName}`,
-          password: `${userDetails.email}`,
         });
 
         const user = await newUser.save();

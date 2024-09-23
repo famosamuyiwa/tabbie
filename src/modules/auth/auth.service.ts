@@ -55,6 +55,7 @@ export class AuthService {
       });
 
       const user = await newUser.save();
+
       delete user.password;
 
       const payload: ApiResponse<User> = {
@@ -79,11 +80,13 @@ export class AuthService {
 
   async login(userDetails: SignInDto): Promise<ApiResponse<User>> {
     try {
-      const { username, password } = userDetails;
+      const { username, email, password } = userDetails;
       // Check if username exists
-      const user = await this.userModel.findOne({ username });
+      const user = await this.userModel.findOne({
+        $or: [{ username }, { email }],
+      });
 
-      console.log(user);
+      // console.log(user);
 
       if (!user) {
         throw new HttpException(
@@ -101,6 +104,8 @@ export class AuthService {
           HttpStatus.UNAUTHORIZED,
         );
       }
+
+      delete user.password;
 
       const payload: ApiResponse<User> = {
         code: HttpStatus.CREATED,
