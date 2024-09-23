@@ -1,10 +1,11 @@
 import { HttpException, HttpStatus, Injectable, Logger } from '@nestjs/common';
 import { CreateAuthDto } from './dto/create-auth.dto';
 import { UpdateAuthDto } from './dto/update-auth.dto';
-import { User } from 'interfaces/common';
+import { SignupResponse, User } from 'interfaces/common';
 import { Model } from 'mongoose';
 import { InjectModel } from '@nestjs/mongoose';
 import * as jwt from 'jsonwebtoken';
+import * as bcrypt from 'bcrypt';
 
 @Injectable()
 export class AuthService {
@@ -54,8 +55,43 @@ export class AuthService {
     }
   }
 
-  async login(userDetails: User) {
+  async login(userDetails: User): Promise<SignupResponse> {
     try {
+      const { username, password } = userDetails;
+      // Check if username exists
+      const user = await this.userModel.findOne({ username });
+
+      if (!user) {
+        throw new HttpException(
+          `Invalid username or password!`,
+          HttpStatus.UNAUTHORIZED,
+        );
+      }
+
+      console.log({
+        password,
+        encrypted: user.password,
+      });
+      //check if password matches
+      const isValidPassword = await bcrypt.compare(password, user.password);
+
+      if (!isValidPassword) {
+        throw new HttpException(
+          `Invalid username or password!`,
+          HttpStatus.UNAUTHORIZED,
+        );
+      }
+      //generate token
+
+      const token = jwt.sign(
+        { email: user.email },
+        process.env.JWT_SECRET_KEY,
+        {
+          expiresIn: process.env.JWT_EXPIRES_IN,
+        },
+      );
+
+      return { user, token };
     } catch (err) {
       this.log.error(`${err}`);
 
@@ -67,23 +103,5 @@ export class AuthService {
       }
     }
   }
-  create(createAuthDto: CreateAuthDto) {
-    return 'This action adds a new auth';
-  }
-
-  findAll() {
-    return `This action returns all auth`;
-  }
-
-  findOne(id: number) {
-    return `This action returns a #${id} auth`;
-  }
-
-  update(id: number, updateAuthDto: UpdateAuthDto) {
-    return `This action updates a #${id} auth`;
-  }
-
-  remove(id: number) {
-    return `This action removes a #${id} auth`;
-  }
+ 
 }

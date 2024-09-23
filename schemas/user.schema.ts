@@ -5,11 +5,7 @@ import { NextFunction } from 'express';
 import { User } from 'interfaces/common';
 
 export const UserSchema = new mongoose.Schema({
-  firstname: {
-    type: String,
-    required: true,
-  },
-  lastname: {
+  username: {
     type: String,
     required: true,
   },
@@ -21,6 +17,27 @@ export const UserSchema = new mongoose.Schema({
   password: {
     type: String,
     required: true,
+  },
+  avatar: {
+    type: String,
+  },
+  splits: {
+    type: Array<any>,
+  },
+  expenses: {
+    type: Array<any>,
+  },
+  lastLogin: {
+    type: Date,
+    default: Date.now,
+  },
+  createdAt: {
+    type: Date,
+    default: Date.now,
+  },
+  updatedAt: {
+    type: Date,
+    default: Date.now,
   },
 });
 
