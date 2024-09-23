@@ -16,6 +16,8 @@ import * as bcrypt from 'bcrypt';
 import 'dotenv';
 import { ResponseStatus } from 'enum/common';
 import { UserService } from '../user/user.service';
+import { OtpService } from '../otp/otp.service';
+import { OTPLog } from 'schemas/otp-log';
 
 @Injectable()
 export class AuthService {
@@ -24,6 +26,8 @@ export class AuthService {
     @InjectModel('User') private userModel: Model<User>,
     @Inject(forwardRef(() => UserService))
     private readonly userService: UserService, // Inject user service
+    @Inject(forwardRef(() => OtpService))
+    private readonly otpService: OtpService, // Inject otp service
   ) {}
 
   async register(userDetails: CreateAuthDto): Promise<ApiResponse<User>> {
@@ -118,6 +122,10 @@ export class AuthService {
       message: 'user search successful',
       data: null, //since we are only confirming if user exists or not, there is no need to return user for security purposes.
     };
+
+    if (by === 'email') {
+      this.otpService.createOTPLog(user.email);
+    }
 
     return payload;
   }

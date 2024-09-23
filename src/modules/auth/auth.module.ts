@@ -4,6 +4,8 @@ import { AuthController } from './auth.controller';
 import { MongooseModule } from '@nestjs/mongoose';
 import { UserSchema } from 'schemas/user.schema';
 import { UserService } from '../user/user.service';
+import { OtpService } from '../otp/otp.service';
+import { OTPLog, OTPLogSchema } from 'schemas/otp-log';
 
 @Module({
   imports: [
@@ -12,9 +14,13 @@ import { UserService } from '../user/user.service';
         name: 'User',
         schema: UserSchema,
       },
+      {
+        name: OTPLog.name,
+        schema: OTPLogSchema,
+      },
     ]),
   ],
   controllers: [AuthController],
-  providers: [AuthService, UserService],
+  providers: [AuthService, UserService, OtpService],
 })
 export class AuthModule {}
