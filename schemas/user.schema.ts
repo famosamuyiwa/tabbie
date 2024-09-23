@@ -2,7 +2,8 @@ import * as mongoose from 'mongoose';
 // import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import * as bcrypt from 'bcrypt';
 import { NextFunction } from 'express';
-import { User } from 'interfaces/common';
+import { SplitSchema } from './split.schema';
+import { ExpenseSchema } from './expense.schema';
 
 export const UserSchema = new mongoose.Schema({
   username: {
@@ -21,12 +22,8 @@ export const UserSchema = new mongoose.Schema({
   avatar: {
     type: String,
   },
-  splits: {
-    type: Array<any>,
-  },
-  expenses: {
-    type: Array<any>,
-  },
+  splits: [SplitSchema],
+  expenses: [ExpenseSchema],
   lastLogin: {
     type: Date,
     default: Date.now,
