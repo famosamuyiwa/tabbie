@@ -11,7 +11,8 @@ import {
 import { AuthService } from './auth.service';
 import { CreateAuthDto } from './dto/create-auth.dto';
 import { UpdateAuthDto } from './dto/update-auth.dto';
-import { User } from 'interfaces/common';
+import { User } from 'schemas/user.schema';
+import { QueryBy } from 'enum/common';
 
 @Controller('auth')
 export class AuthController {
@@ -29,7 +30,7 @@ export class AuthController {
 
   @Get('check')
   findUserByEmailOrUsername(
-    @Query('by') by: 'email' | 'username' | 'both',
+    @Query('by') by: QueryBy,
     @Query('value') value: string,
   ) {
     return this.authService.findUserByEmailOrUsername(by, value);
