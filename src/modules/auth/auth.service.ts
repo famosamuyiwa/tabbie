@@ -91,4 +91,17 @@ export class AuthService {
       }
     }
   }
+
+  async googleLogin(req) {
+    if (!req.user) {
+      return 'No user from google';
+    }
+
+    const user = await this.userModel.findOne({ email: req.user.email });
+
+    return {
+      message: 'User information from google',
+      user,
+    };
+  }
 }

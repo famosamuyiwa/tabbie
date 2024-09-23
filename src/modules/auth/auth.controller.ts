@@ -7,13 +7,14 @@ import {
   Param,
   Delete,
   UseGuards,
+  Req,
 } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { CreateAuthDto } from './dto/create-auth.dto';
 import { UpdateAuthDto } from './dto/update-auth.dto';
 import { User } from 'interfaces/common';
-import { GoogleOauthGuard } from './guards/google-oauth.guards/google-oauth.guards.guard';
 import { handleResponse } from 'utils/helper-methods';
+import { AuthGuard } from '@nestjs/passport';
 
 @Controller('auth')
 export class AuthController {
@@ -31,6 +32,12 @@ export class AuthController {
   }
 
   @Get('google')
-  @UseGuards(GoogleOauthGuard)
-  async auth() {}
+  @UseGuards(AuthGuard('google'))
+  async googleAuth(@Req() req) {}
+
+  @Get('google/redirect')
+  @UseGuards(AuthGuard('google'))
+  googleAuthRedirect(@Req() req) {
+    return this.authService.googleLogin(req);
+  }
 }
