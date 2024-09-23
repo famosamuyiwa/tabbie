@@ -3,13 +3,13 @@ import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
-import { ApiResponse, User } from 'interfaces/common';
-import { ResponseStatus } from 'enum/common';
+import { User } from 'schemas/user.schema';
+import { QueryBy } from 'enum/common';
 
 @Injectable()
 export class UserService {
   private readonly log = new Logger(UserService.name);
-  constructor(@InjectModel('User') private userModel: Model<User>) {}
+  constructor(@InjectModel(User.name) private userModel: Model<User>) {}
 
   create(createUserDto: CreateUserDto) {
     return 'This action adds a new user';
@@ -39,7 +39,7 @@ export class UserService {
     return `This action removes a #${_id} user`;
   }
 
-  async findOneByQueries(by, value): Promise<User> {
+  async findOneByQueries(by: QueryBy, value: string): Promise<User> {
     let query;
 
     if (!by || !value) {
@@ -50,13 +50,13 @@ export class UserService {
     }
 
     switch (by) {
-      case 'email':
+      case QueryBy.EMAIL:
         query = { email: value };
         break;
-      case 'username':
+      case QueryBy.USERNAME:
         query = { username: value };
         break;
-      case 'both':
+      case QueryBy.BOTH:
       default:
         query = {
           $or: [{ email: value }, { username: value }],

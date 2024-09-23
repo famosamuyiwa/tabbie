@@ -8,21 +8,22 @@ import {
 } from '@nestjs/common';
 import { CreateAuthDto } from './dto/create-auth.dto';
 import { UpdateAuthDto } from './dto/update-auth.dto';
-import { ApiResponse, SignupResponse, User } from 'interfaces/common';
+import { ApiResponse, SignupResponse } from 'interfaces/common';
 import { Model } from 'mongoose';
 import { InjectModel } from '@nestjs/mongoose';
 import * as jwt from 'jsonwebtoken';
 import * as bcrypt from 'bcrypt';
 import 'dotenv';
-import { ResponseStatus } from 'enum/common';
+import { QueryBy, ResponseStatus } from 'enum/common';
 import { UserService } from '../user/user.service';
 import { OtpService } from '../otp/otp.service';
+import { User } from 'schemas/user.schema';
 
 @Injectable()
 export class AuthService {
   private readonly log = new Logger(AuthService.name);
   constructor(
-    @InjectModel('User') private userModel: Model<User>,
+    @InjectModel(User.name) private userModel: Model<User>,
     @Inject(forwardRef(() => UserService))
     private readonly userService: UserService, // Inject user service
     @Inject(forwardRef(() => OtpService))
@@ -110,7 +111,7 @@ export class AuthService {
   }
 
   async findUserByEmailOrUsername(
-    by: 'email' | 'username' | 'both',
+    by: QueryBy,
     value: string,
   ): Promise<ApiResponse> {
     const user = await this.userService.findOneByQueries(by, value);
