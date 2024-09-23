@@ -10,6 +10,8 @@ import {
 import { ValidationLogEventListener } from 'utils/lib/validation-log-event-listener';
 import { EventEmitterModule } from '@nestjs/event-emitter';
 import { ConfigModule } from '@nestjs/config';
+import { UserModule } from './modules/user/user.module';
+import { AuthModule } from './modules/auth/auth.module';
 @Module({
   imports: [
     ConfigModule.forRoot(),
@@ -19,6 +21,8 @@ import { ConfigModule } from '@nestjs/config';
       { name: ValidationLogTracer.name, schema: ValidationLogTracerSchema },
     ]),
     EventEmitterModule.forRoot(),
+    UserModule,
+    AuthModule,
   ],
   controllers: [AppController],
   providers: [AppService, ValidationLogEventListener],
