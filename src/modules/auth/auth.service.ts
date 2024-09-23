@@ -17,7 +17,6 @@ import 'dotenv';
 import { ResponseStatus } from 'enum/common';
 import { UserService } from '../user/user.service';
 import { OtpService } from '../otp/otp.service';
-import { OTPLog } from 'schemas/otp-log';
 
 @Injectable()
 export class AuthService {
@@ -116,7 +115,7 @@ export class AuthService {
   ): Promise<ApiResponse> {
     const user = await this.userService.findOneByQueries(by, value);
 
-    const payload: ApiResponse<User> = {
+    const payload: ApiResponse = {
       code: HttpStatus.CREATED,
       status: ResponseStatus.SUCCESS,
       message: 'user search successful',
