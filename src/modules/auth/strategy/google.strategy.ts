@@ -5,13 +5,15 @@ import { config } from 'dotenv';
 import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
-import { User } from 'interfaces/common';
+import { CreateAuthDto } from '../dto/create-auth.dto';
+import { User } from 'schemas/user.schema';
+// import { User } from 'interfaces/common';
 
 config();
 
 @Injectable()
 export class GoogleStrategy extends PassportStrategy(Strategy, 'google') {
-  constructor(@InjectModel('User') private userModel: Model<User>) {
+  constructor(@InjectModel(User.name) private userModel: Model<User>) {
     super({
       clientID: process.env.GOOGLE_AUTH_CLIENT_ID,
       clientSecret: process.env.GOOGLE_AUTH_CLIENT_SECRET,

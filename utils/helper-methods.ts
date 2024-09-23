@@ -3,7 +3,6 @@ import { EventEmitter2 } from '@nestjs/event-emitter';
 import { HttpException, HttpStatus, Logger } from '@nestjs/common';
 import { ValidationLogTracer } from 'schemas/validation-tracer';
 import { ValidationLogEventData } from 'utils/lib/validation-log-event-data';
-import { APIResponse } from 'interfaces/common';
 
 export class Utils {
   private readonly log = new Logger(Utils.name);

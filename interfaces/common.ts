@@ -1,4 +1,11 @@
-import { Document } from 'mongoose';
+// import { User } from 'schemas/user.schema';
+
+export interface ApiResponse<T = any> {
+  code: number;
+  status: string;
+  message: string;
+  data: T;
+}
 
 export interface ChatMessage {
   _id: string;
@@ -8,26 +15,10 @@ export interface ChatMessage {
   timestamp: Date;
 }
 
-export interface User extends Document {
-  _id: string;
-  username: string;
-  email: string;
-  password: string;
-  avatar: string;
-  confirm_password: string;
-  splits: [];
-  expenses: [];
-  lastLogin: Date;
-  createdAt: Date;
-  updatedAt: Date;
-}
-
-export interface APIResponse {
-  code: number;
-  status: 'success' | 'failure';
-  message?: string;
-  data?: {};
-}
+// export interface SignupResponse {
+//   user: User;
+//   token: string;
+// }
 
 // export interface User extends Document {
 //   _id: string;

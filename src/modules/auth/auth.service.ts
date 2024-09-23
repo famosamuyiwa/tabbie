@@ -1,36 +1,49 @@
-import { HttpException, HttpStatus, Injectable, Logger } from '@nestjs/common';
+import {
+  HttpException,
+  HttpStatus,
+  Inject,
+  Injectable,
+  Logger,
+  forwardRef,
+} from '@nestjs/common';
 import { CreateAuthDto } from './dto/create-auth.dto';
 import { UpdateAuthDto } from './dto/update-auth.dto';
-import { User } from 'interfaces/common';
+import { ApiResponse } from 'interfaces/common';
 import { Model } from 'mongoose';
 import { InjectModel } from '@nestjs/mongoose';
 import * as jwt from 'jsonwebtoken';
 import * as bcrypt from 'bcrypt';
 import 'dotenv';
+import { QueryBy, ResponseStatus } from 'enum/common';
+import { UserService } from '../user/user.service';
+import { OtpService } from '../otp/otp.service';
+import { User } from 'schemas/user.schema';
+import { SignInDto } from './dto/signin-auth.dto';
 
 @Injectable()
 export class AuthService {
   private readonly log = new Logger(AuthService.name);
-  constructor(@InjectModel('User') private userModel: Model<User>) {}
+  constructor(
+    @InjectModel(User.name) private userModel: Model<User>,
+    @Inject(forwardRef(() => UserService))
+    private readonly userService: UserService, // Inject user service
+    @Inject(forwardRef(() => OtpService))
+    private readonly otpService: OtpService, // Inject otp service
+  ) {}
 
-  async register(userDetails: User): Promise<User> {
+  async register(userDetails: CreateAuthDto): Promise<ApiResponse<User>> {
     try {
       this.log.log('Retrieving all users...');
 
-      const { username, email, password, confirm_password } = userDetails;
+      const { username, email, password } = userDetails;
 
-      if (confirm_password !== password) {
+      const userExist = await this.userModel.findOne({
+        $or: [{ username }, { email }],
+      });
+
+      if (userExist) {
         throw new HttpException(
-          `Passwords do not match!`,
-          HttpStatus.NOT_ACCEPTABLE,
-        );
-      }
-
-      const checkUser = await this.userModel.findOne({ email });
-
-      if (checkUser) {
-        throw new HttpException(
-          `User ${userDetails.username} already registered.`,
+          `Username or email already exists`,
           HttpStatus.CONFLICT,
         );
       }
@@ -42,8 +55,16 @@ export class AuthService {
       });
 
       const user = await newUser.save();
+      delete user.password;
 
-      return user;
+      const payload: ApiResponse<User> = {
+        code: HttpStatus.CREATED,
+        status: ResponseStatus.SUCCESS,
+        message: 'user created successfully',
+        data: user,
+      };
+
+      return payload;
     } catch (err) {
       this.log.error(`${err}`);
 
@@ -56,11 +77,13 @@ export class AuthService {
     }
   }
 
-  async login(userDetails: User) {
+  async login(userDetails: SignInDto): Promise<ApiResponse<User>> {
     try {
       const { username, password } = userDetails;
       // Check if username exists
       const user = await this.userModel.findOne({ username });
+
+      console.log(user);
 
       if (!user) {
         throw new HttpException(
@@ -79,7 +102,14 @@ export class AuthService {
         );
       }
 
-      return { user };
+      const payload: ApiResponse<User> = {
+        code: HttpStatus.CREATED,
+        status: ResponseStatus.SUCCESS,
+        message: 'user logged in successfully',
+        data: user,
+      };
+
+      return payload;
     } catch (err) {
       this.log.error(`${err}`);
 
@@ -92,16 +122,51 @@ export class AuthService {
     }
   }
 
-  async googleLogin(req) {
-    if (!req.user) {
-      return 'No user from google';
+  async googleLogin(req): Promise<ApiResponse<User>> {
+    try {
+      if (!req.user) {
+        throw new HttpException(`User not found: Google`, HttpStatus.NOT_FOUND);
+      }
+
+      const user = await this.userModel.findOne({ email: req.user.email });
+
+      const payload: ApiResponse<User> = {
+        code: HttpStatus.CREATED,
+        status: ResponseStatus.SUCCESS,
+        message: 'user logged in successfully',
+        data: user,
+      };
+
+      return payload;
+    } catch (err) {
+      this.log.error(`${err}`);
+
+      // Check if the error is a ConflictException
+      if (err instanceof HttpException) {
+        throw err; // Re-throw the Conflict exception
+      } else {
+        throw new HttpException(err, HttpStatus.INTERNAL_SERVER_ERROR);
+      }
+    }
+  }
+
+  async findUserByEmailOrUsername(
+    by: QueryBy,
+    value: string,
+  ): Promise<ApiResponse> {
+    const user = await this.userService.findOneByQueries(by, value);
+
+    const payload: ApiResponse = {
+      code: HttpStatus.CREATED,
+      status: ResponseStatus.SUCCESS,
+      message: 'user search successful',
+      data: null, //since we are only confirming if user exists or not, there is no need to return user for security purposes.
+    };
+
+    if (by === 'email') {
+      this.otpService.createOTPLog(user.email);
     }
 
-    const user = await this.userModel.findOne({ email: req.user.email });
-
-    return {
-      message: 'User information from google',
-      user,
-    };
+    return payload;
   }
 }

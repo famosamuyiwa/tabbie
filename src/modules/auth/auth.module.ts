@@ -4,6 +4,9 @@ import { AuthController } from './auth.controller';
 import { MongooseModule } from '@nestjs/mongoose';
 import { UserSchema } from 'schemas/user.schema';
 import { GoogleStrategy } from './strategy/google.strategy';
+import { UserService } from '../user/user.service';
+import { OtpService } from '../otp/otp.service';
+import { OTPLog, OTPLogSchema } from 'schemas/otp-log';
 
 @Module({
   imports: [
@@ -12,9 +15,14 @@ import { GoogleStrategy } from './strategy/google.strategy';
         name: 'User',
         schema: UserSchema,
       },
+      {
+        name: OTPLog.name,
+        schema: OTPLogSchema,
+      },
     ]),
   ],
+
   controllers: [AuthController],
-  providers: [AuthService, GoogleStrategy],
+  providers: [AuthService, UserService, OtpService, GoogleStrategy],
 })
 export class AuthModule {}

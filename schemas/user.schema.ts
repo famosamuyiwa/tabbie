@@ -1,42 +1,38 @@
-import * as mongoose from 'mongoose';
-// import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
+import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import * as bcrypt from 'bcrypt';
 import { NextFunction } from 'express';
-import { SplitSchema } from './split.schema';
-import { ExpenseSchema } from './expense.schema';
 
-export const UserSchema = new mongoose.Schema({
-  username: {
-    type: String,
-    required: true,
-  },
-  email: {
-    type: String,
-    unique: true,
-    required: true,
-  },
-  password: {
-    type: String,
-    required: true,
-  },
-  avatar: {
-    type: String,
-  },
-  splits: [SplitSchema],
-  expenses: [ExpenseSchema],
-  lastLogin: {
-    type: Date,
-    default: Date.now,
-  },
-  createdAt: {
-    type: Date,
-    default: Date.now,
-  },
-  updatedAt: {
-    type: Date,
-    default: Date.now,
-  },
-});
+@Schema({ collection: 'otp-log', timestamps: true })
+export class User {
+  @Prop({ required: true })
+  username: string;
+
+  @Prop({ required: true })
+  email: string;
+
+  @Prop({ required: true })
+  password: string;
+
+  @Prop()
+  avatar: string;
+
+  @Prop()
+  splits: []; //should be Split[] when the schema is eventually created
+
+  @Prop()
+  expenses: []; //should be Expense[] when that schema is eventually created
+
+  @Prop({ default: Date.now })
+  lastLogin: Date;
+
+  @Prop({ default: Date.now })
+  createdAt: Date;
+
+  @Prop({ default: Date.now })
+  updatedAt: Date;
+}
+
+export const UserSchema = SchemaFactory.createForClass(User);
 
 UserSchema.pre('save', async function (next: NextFunction) {
   try {
