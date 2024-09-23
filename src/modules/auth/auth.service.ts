@@ -1,7 +1,7 @@
 import { HttpException, HttpStatus, Injectable, Logger } from '@nestjs/common';
 import { CreateAuthDto } from './dto/create-auth.dto';
 import { UpdateAuthDto } from './dto/update-auth.dto';
-import { SignupResponse, User } from 'interfaces/common';
+import { User } from 'interfaces/common';
 import { Model } from 'mongoose';
 import { InjectModel } from '@nestjs/mongoose';
 import * as jwt from 'jsonwebtoken';
@@ -56,7 +56,7 @@ export class AuthService {
     }
   }
 
-  async login(userDetails: User): Promise<SignupResponse> {
+  async login(userDetails: User) {
     try {
       const { username, password } = userDetails;
       // Check if username exists
@@ -78,17 +78,8 @@ export class AuthService {
           HttpStatus.UNAUTHORIZED,
         );
       }
-      //generate token
 
-      const token = jwt.sign(
-        { email: user.email },
-        process.env.JWT_SECRET_KEY,
-        {
-          expiresIn: process.env.JWT_EXPIRES_IN,
-        },
-      );
-
-      return { user, token };
+      return { user };
     } catch (err) {
       this.log.error(`${err}`);
 

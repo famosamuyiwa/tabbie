@@ -22,9 +22,11 @@ export interface User extends Document {
   updatedAt: Date;
 }
 
-export interface SignupResponse {
-  user: User;
-  token: string;
+export interface APIResponse {
+  code: number;
+  status: 'success' | 'failure';
+  message?: string;
+  data?: {};
 }
 
 // export interface User extends Document {
