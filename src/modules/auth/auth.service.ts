@@ -6,6 +6,7 @@ import { Model } from 'mongoose';
 import { InjectModel } from '@nestjs/mongoose';
 import * as jwt from 'jsonwebtoken';
 import * as bcrypt from 'bcrypt';
+import 'dotenv';
 
 @Injectable()
 export class AuthService {
@@ -68,10 +69,6 @@ export class AuthService {
         );
       }
 
-      console.log({
-        password,
-        encrypted: user.password,
-      });
       //check if password matches
       const isValidPassword = await bcrypt.compare(password, user.password);
 
@@ -103,5 +100,4 @@ export class AuthService {
       }
     }
   }
- 
 }
