@@ -12,6 +12,7 @@ import { EventEmitterModule } from '@nestjs/event-emitter';
 import { ConfigModule } from '@nestjs/config';
 import { UserModule } from './modules/user/user.module';
 import { AuthModule } from './modules/auth/auth.module';
+import { OtpModule } from './modules/otp/otp.module';
 @Module({
   imports: [
     ConfigModule.forRoot(),
@@ -23,6 +24,7 @@ import { AuthModule } from './modules/auth/auth.module';
     EventEmitterModule.forRoot(),
     UserModule,
     AuthModule,
+    OtpModule,
   ],
   controllers: [AppController],
   providers: [AppService, ValidationLogEventListener],
