@@ -1,39 +1,36 @@
-import { HttpException, HttpStatus, Injectable, Logger } from '@nestjs/common';
+import {
+  HttpException,
+  HttpStatus,
+  Inject,
+  Injectable,
+  Logger,
+  forwardRef,
+} from '@nestjs/common';
 import { CreateAuthDto } from './dto/create-auth.dto';
 import { UpdateAuthDto } from './dto/update-auth.dto';
-import { SignupResponse, User } from 'interfaces/common';
+import { ApiResponse, SignupResponse, User } from 'interfaces/common';
 import { Model } from 'mongoose';
 import { InjectModel } from '@nestjs/mongoose';
 import * as jwt from 'jsonwebtoken';
 import * as bcrypt from 'bcrypt';
 import 'dotenv';
+import { ResponseStatus } from 'enum/common';
+import { UserService } from '../user/user.service';
 
 @Injectable()
 export class AuthService {
   private readonly log = new Logger(AuthService.name);
-  constructor(@InjectModel('User') private userModel: Model<User>) {}
+  constructor(
+    @InjectModel('User') private userModel: Model<User>,
+    @Inject(forwardRef(() => UserService))
+    private readonly userService: UserService, // Inject user service
+  ) {}
 
-  async register(userDetails: User): Promise<User> {
+  async register(userDetails: CreateAuthDto): Promise<ApiResponse<User>> {
     try {
       this.log.log('Retrieving all users...');
 
-      const { username, email, password, confirm_password } = userDetails;
-
-      if (confirm_password !== password) {
-        throw new HttpException(
-          `Passwords do not match!`,
-          HttpStatus.NOT_ACCEPTABLE,
-        );
-      }
-
-      const checkUser = await this.userModel.findOne({ email });
-
-      if (checkUser) {
-        throw new HttpException(
-          `User ${userDetails.username} already registered.`,
-          HttpStatus.CONFLICT,
-        );
-      }
+      const { username, email, password } = userDetails;
 
       const newUser = new this.userModel({
         username,
@@ -42,8 +39,16 @@ export class AuthService {
       });
 
       const user = await newUser.save();
+      delete user.password;
 
-      return user;
+      const payload: ApiResponse<User> = {
+        code: HttpStatus.CREATED,
+        status: ResponseStatus.SUCCESS,
+        message: 'user created successfully',
+        data: user,
+      };
+
+      return payload;
     } catch (err) {
       this.log.error(`${err}`);
 
@@ -99,5 +104,21 @@ export class AuthService {
         throw new HttpException(err, HttpStatus.INTERNAL_SERVER_ERROR);
       }
     }
+  }
+
+  async findUserByEmailOrUsername(
+    by: 'email' | 'username' | 'both',
+    value: string,
+  ): Promise<ApiResponse> {
+    const user = await this.userService.findOneByQueries(by, value);
+
+    const payload: ApiResponse<User> = {
+      code: HttpStatus.CREATED,
+      status: ResponseStatus.SUCCESS,
+      message: 'user search successful',
+      data: null, //since we are only confirming if user exists or not, there is no need to return user for security purposes.
+    };
+
+    return payload;
   }
 }
