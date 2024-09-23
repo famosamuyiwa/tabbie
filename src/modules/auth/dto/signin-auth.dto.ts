@@ -1,12 +1,13 @@
+import { Optional } from '@nestjs/common';
 import { IsNotEmpty, IsString } from 'class-validator';
 
 export class SignInDto {
   @IsString()
-  @IsNotEmpty()
+  @Optional()
   email: string;
 
   @IsString()
-  @IsNotEmpty()
+  @Optional()
   username: string;
 
   @IsString()
