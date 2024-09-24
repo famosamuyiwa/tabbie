@@ -16,12 +16,6 @@ export class User {
   @Prop()
   avatar: string;
 
-  @Prop()
-  splits: []; //should be Split[] when the schema is eventually created
-
-  @Prop()
-  expenses: []; //should be Expense[] when that schema is eventually created
-
   @Prop({ default: Date.now })
   lastLogin: Date;
 
