@@ -8,7 +8,7 @@ import {
 } from '@nestjs/common';
 import { CreateAuthDto } from './dto/create-auth.dto';
 import { UpdateAuthDto } from './dto/update-auth.dto';
-import { ApiResponse, SignupResponse } from 'interfaces/common';
+import { ApiResponse } from 'interfaces/common';
 import { Model } from 'mongoose';
 import { InjectModel } from '@nestjs/mongoose';
 import * as jwt from 'jsonwebtoken';
@@ -18,6 +18,8 @@ import { QueryBy, ResponseStatus } from 'enum/common';
 import { UserService } from '../user/user.service';
 import { OtpService } from '../otp/otp.service';
 import { User } from 'schemas/user.schema';
+import { SignInDto } from './dto/signin-auth.dto';
+import { ResetPasswordDto } from './dto/resetpassword-auth.dto';
 
 @Injectable()
 export class AuthService {
@@ -36,6 +38,17 @@ export class AuthService {
 
       const { username, email, password } = userDetails;
 
+      const userExist = await this.userModel.findOne({
+        $or: [{ username }, { email }],
+      });
+
+      if (userExist) {
+        throw new HttpException(
+          `Username or email already exists`,
+          HttpStatus.CONFLICT,
+        );
+      }
+
       const newUser = new this.userModel({
         username,
         email,
@@ -43,6 +56,7 @@ export class AuthService {
       });
 
       const user = await newUser.save();
+
       delete user.password;
 
       const payload: ApiResponse<User> = {
@@ -65,11 +79,15 @@ export class AuthService {
     }
   }
 
-  async login(userDetails: User): Promise<SignupResponse> {
+  async login(userDetails: SignInDto): Promise<ApiResponse<User>> {
     try {
-      const { username, password } = userDetails;
+      const { emailOrUsername, password } = userDetails;
       // Check if username exists
-      const user = await this.userModel.findOne({ username });
+      const user = await this.userModel.findOne({
+        $or: [{ username: emailOrUsername }, { email: emailOrUsername }],
+      });
+
+      // console.log(user);
 
       if (!user) {
         throw new HttpException(
@@ -87,17 +105,84 @@ export class AuthService {
           HttpStatus.UNAUTHORIZED,
         );
       }
-      //generate token
 
-      const token = jwt.sign(
-        { email: user.email },
-        process.env.JWT_SECRET_KEY,
-        {
-          expiresIn: process.env.JWT_EXPIRES_IN,
-        },
+      delete user.password;
+
+      const payload: ApiResponse<User> = {
+        code: HttpStatus.CREATED,
+        status: ResponseStatus.SUCCESS,
+        message: 'user logged in successfully',
+        data: user,
+      };
+
+      return payload;
+    } catch (err) {
+      this.log.error(`${err}`);
+
+      // Check if the error is a ConflictException
+      if (err instanceof HttpException) {
+        throw err; // Re-throw the Conflict exception
+      } else {
+        throw new HttpException(err, HttpStatus.INTERNAL_SERVER_ERROR);
+      }
+    }
+  }
+
+  async googleLogin(req): Promise<ApiResponse<User>> {
+    try {
+      if (!req.user) {
+        throw new HttpException(`User not found: Google`, HttpStatus.NOT_FOUND);
+      }
+
+      const user = await this.userModel.findOne({ email: req.user.email });
+
+      const payload: ApiResponse<User> = {
+        code: HttpStatus.CREATED,
+        status: ResponseStatus.SUCCESS,
+        message: 'user logged in successfully',
+        data: user,
+      };
+
+      return payload;
+    } catch (err) {
+      this.log.error(`${err}`);
+
+      // Check if the error is a ConflictException
+      if (err instanceof HttpException) {
+        throw err; // Re-throw the Conflict exception
+      } else {
+        throw new HttpException(err, HttpStatus.INTERNAL_SERVER_ERROR);
+      }
+    }
+  }
+
+  async resetPassword(details: ResetPasswordDto): Promise<ApiResponse<any>> {
+    try {
+      // check if user exists
+      let { email, password } = details;
+
+      password = await bcrypt.hash(password, 10);
+
+      const userExists = await this.userModel.findOneAndUpdate(
+        { email },
+        { password },
       );
 
-      return { user, token };
+      console.log(userExists);
+      if (!userExists) {
+        throw new HttpException(
+          `User: ${email} not found!`,
+          HttpStatus.NOT_FOUND,
+        );
+      }
+
+      const payload: ApiResponse<any> = {
+        code: HttpStatus.CREATED,
+        status: ResponseStatus.SUCCESS,
+        message: 'Password successfully updated',
+        data: null,
+      };
+      return payload;
     } catch (err) {
       this.log.error(`${err}`);
 

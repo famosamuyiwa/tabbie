@@ -1,4 +1,4 @@
-import { User } from 'schemas/user.schema';
+// import { User } from 'schemas/user.schema';
 
 export interface ApiResponse<T = any> {
   code: number;
@@ -15,10 +15,10 @@ export interface ChatMessage {
   timestamp: Date;
 }
 
-export interface SignupResponse {
-  user: User;
-  token: string;
-}
+// export interface SignupResponse {
+//   user: User;
+//   token: string;
+// }
 
 // export interface User extends Document {
 //   _id: string;

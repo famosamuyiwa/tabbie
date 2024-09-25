@@ -2,12 +2,12 @@ import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import * as bcrypt from 'bcrypt';
 import { NextFunction } from 'express';
 
-@Schema({ collection: 'otp-log', timestamps: true })
+@Schema({ collection: 'users', timestamps: true })
 export class User {
-  @Prop()
+  @Prop({ required: true })
   username: string;
 
-  @Prop()
+  @Prop({ required: true })
   email: string;
 
   @Prop()
@@ -16,19 +16,13 @@ export class User {
   @Prop()
   avatar: string;
 
-  @Prop()
-  splits: []; //should be Split[] when the schema is eventually created
-
-  @Prop()
-  expenses: []; //should be Expense[] when that schema is eventually created
-
-  @Prop()
+  @Prop({ default: Date.now })
   lastLogin: Date;
 
-  @Prop()
+  @Prop({ default: Date.now })
   createdAt: Date;
 
-  @Prop()
+  @Prop({ default: Date.now })
   updatedAt: Date;
 }
 
