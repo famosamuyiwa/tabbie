@@ -18,6 +18,8 @@ import { AuthGuard } from '@nestjs/passport';
 import { User } from 'schemas/user.schema';
 import { QueryBy } from 'enum/common';
 import { SignInDto } from './dto/signin-auth.dto';
+import { ResponseStatus } from '../../../enum/common';
+import { ResetPasswordDto } from './dto/resetpassword-auth.dto';
 
 @Controller('auth')
 export class AuthController {
@@ -30,8 +32,12 @@ export class AuthController {
 
   @Post('login')
   async login(@Body() user: SignInDto) {
-    const response = await this.authService.login(user);
-    return handleResponse(response);
+    return this.authService.login(user);
+  }
+
+  @Post('reset-password')
+  async resetPassword(@Body() details: ResetPasswordDto) {
+    return this.authService.resetPassword(details);
   }
 
   @Get('google')

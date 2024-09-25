@@ -19,6 +19,7 @@ import { UserService } from '../user/user.service';
 import { OtpService } from '../otp/otp.service';
 import { User } from 'schemas/user.schema';
 import { SignInDto } from './dto/signin-auth.dto';
+import { ResetPasswordDto } from './dto/resetpassword-auth.dto';
 
 @Injectable()
 export class AuthService {
@@ -155,7 +156,44 @@ export class AuthService {
     }
   }
 
-  async resetPassword() {}
+  async resetPassword(details: ResetPasswordDto): Promise<ApiResponse<any>> {
+    try {
+      // check if user exists
+      let { email, password } = details;
+
+      password = await bcrypt.hash(password, 10);
+
+      const userExists = await this.userModel.findOneAndUpdate(
+        { email },
+        { password },
+      );
+
+      console.log(userExists);
+      if (!userExists) {
+        throw new HttpException(
+          `User: ${email} not found!`,
+          HttpStatus.NOT_FOUND,
+        );
+      }
+
+      const payload: ApiResponse<any> = {
+        code: HttpStatus.CREATED,
+        status: ResponseStatus.SUCCESS,
+        message: 'Password successfully updated',
+        data: null,
+      };
+      return payload;
+    } catch (err) {
+      this.log.error(`${err}`);
+
+      // Check if the error is a ConflictException
+      if (err instanceof HttpException) {
+        throw err; // Re-throw the Conflict exception
+      } else {
+        throw new HttpException(err, HttpStatus.INTERNAL_SERVER_ERROR);
+      }
+    }
+  }
 
   async findUserByEmailOrUsername(
     by: QueryBy,
