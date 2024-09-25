@@ -80,10 +80,10 @@ export class AuthService {
 
   async login(userDetails: SignInDto): Promise<ApiResponse<User>> {
     try {
-      const { username, email, password } = userDetails;
+      const { emailOrUsername, password } = userDetails;
       // Check if username exists
       const user = await this.userModel.findOne({
-        $or: [{ username }, { email }],
+        $or: [{ username: emailOrUsername }, { email: emailOrUsername }],
       });
 
       // console.log(user);
@@ -154,6 +154,8 @@ export class AuthService {
       }
     }
   }
+
+  async resetPassword() {}
 
   async findUserByEmailOrUsername(
     by: QueryBy,
