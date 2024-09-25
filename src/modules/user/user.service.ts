@@ -64,13 +64,12 @@ export class UserService {
     }
 
     try {
-      const user = await this.userModel.findOne(query);
+      let user = await this.userModel.findOne(query);
 
       // If no user is found, handle it with an error
       if (!user) {
-        throw new HttpException('User not found', HttpStatus.NOT_FOUND);
+        user = null;
       }
-
       return user;
     } catch (err) {
       this.log.error(`${err}`);

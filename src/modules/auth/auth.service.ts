@@ -168,7 +168,6 @@ export class AuthService {
         { password },
       );
 
-      console.log(userExists);
       if (!userExists) {
         throw new HttpException(
           `User: ${email} not found!`,
@@ -202,14 +201,14 @@ export class AuthService {
     const user = await this.userService.findOneByQueries(by, value);
 
     const payload: ApiResponse = {
-      code: HttpStatus.CREATED,
+      code: user ? HttpStatus.OK : HttpStatus.NO_CONTENT,
       status: ResponseStatus.SUCCESS,
       message: 'user search successful',
       data: null, //since we are only confirming if user exists or not, there is no need to return user for security purposes.
     };
 
-    if (by === 'email') {
-      this.otpService.createOTPLog(user.email);
+    if (by === QueryBy.EMAIL) {
+      this.otpService.createOTPLog(value);
     }
 
     return payload;
