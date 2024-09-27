@@ -1,4 +1,4 @@
-// import { User } from 'schemas/user.schema';
+import { OAuthProvider } from 'enum/common';
 
 export interface ApiResponse<T = any> {
   code: number;
@@ -15,15 +15,7 @@ export interface ChatMessage {
   timestamp: Date;
 }
 
-// export interface SignupResponse {
-//   user: User;
-//   token: string;
-// }
-
-// export interface User extends Document {
-//   _id: string;
-//   firstname: string;
-//   lastname: string;
-//   email: string;
-//   password: string;
-// }
+export interface OAuthRequest {
+  token: string;
+  provider: OAuthProvider;
+}

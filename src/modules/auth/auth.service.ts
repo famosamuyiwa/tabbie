@@ -8,18 +8,19 @@ import {
 } from '@nestjs/common';
 import { CreateAuthDto } from './dto/create-auth.dto';
 import { UpdateAuthDto } from './dto/update-auth.dto';
-import { ApiResponse } from 'interfaces/common';
+import { ApiResponse, OAuthRequest } from 'interfaces/common';
 import { Model } from 'mongoose';
 import { InjectModel } from '@nestjs/mongoose';
 import * as jwt from 'jsonwebtoken';
 import * as bcrypt from 'bcrypt';
 import 'dotenv';
-import { QueryBy, ResponseStatus } from 'enum/common';
+import { OAuthProvider, QueryBy, ResponseStatus } from 'enum/common';
 import { UserService } from '../user/user.service';
 import { OtpService } from '../otp/otp.service';
 import { User } from 'schemas/user.schema';
 import { SignInDto } from './dto/signin-auth.dto';
 import { ResetPasswordDto } from './dto/resetpassword-auth.dto';
+import axios from 'axios';
 
 @Injectable()
 export class AuthService {
@@ -128,14 +129,43 @@ export class AuthService {
     }
   }
 
-  async googleLogin(req): Promise<ApiResponse<User>> {
+  async loginWithOAuth(credentials: OAuthRequest): Promise<ApiResponse<User>> {
+    let user: User;
+    const { token, provider } = credentials;
+
+    if (!token) return;
+    let url = '';
+
+    switch (provider) {
+      case OAuthProvider.GOOGLE:
+        url = 'https://www.googleapis.com/userinfo/v2/me';
+        break;
+      default:
+        return;
+    }
+
     try {
-      if (!req.user) {
-        throw new HttpException(`User not found: Google`, HttpStatus.NOT_FOUND);
+      const { data } = await axios.get(url, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      if (!data) {
+        throw new HttpException(
+          'OAuthExceptionError: Something went wrong while fetching user data',
+          HttpStatus.EXPECTATION_FAILED,
+        );
       }
 
-      const user = await this.userModel.findOne({ email: req.user.email });
+      // Check if username exists
+      user = await this.userModel.findOne({ email: data.email });
 
+      if (!user) {
+        const newUser = new this.userModel({
+          email: data.email,
+        });
+        user = await newUser.save();
+      }
       const payload: ApiResponse<User> = {
         code: HttpStatus.CREATED,
         status: ResponseStatus.SUCCESS,

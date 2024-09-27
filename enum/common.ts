@@ -8,3 +8,7 @@ export enum QueryBy {
   USERNAME = 'username',
   BOTH = 'both',
 }
+
+export enum OAuthProvider {
+  GOOGLE = 'GOOGLE',
+}

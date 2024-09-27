@@ -4,7 +4,7 @@ import { NextFunction } from 'express';
 
 @Schema({ collection: 'users', timestamps: true })
 export class User {
-  @Prop({ required: true })
+  @Prop()
   username: string;
 
   @Prop({ required: true })

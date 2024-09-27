@@ -16,10 +16,11 @@ import { UpdateAuthDto } from './dto/update-auth.dto';
 import { handleResponse } from 'utils/helper-methods';
 import { AuthGuard } from '@nestjs/passport';
 import { User } from 'schemas/user.schema';
-import { QueryBy } from 'enum/common';
+import { OAuthProvider, QueryBy } from 'enum/common';
 import { SignInDto } from './dto/signin-auth.dto';
 import { ResponseStatus } from '../../../enum/common';
 import { ResetPasswordDto } from './dto/resetpassword-auth.dto';
+import { OAuthRequest } from 'interfaces/common';
 
 @Controller('auth')
 export class AuthController {
@@ -35,19 +36,18 @@ export class AuthController {
     return this.authService.login(user);
   }
 
+  @Get('/oauth/:token')
+  async loginWithOAuth(
+    @Param('token') token: string,
+    @Query('provider') provider: OAuthProvider,
+  ) {
+    const credentials: OAuthRequest = { token, provider };
+    return this.authService.loginWithOAuth(credentials);
+  }
+
   @Post('reset-password')
   async resetPassword(@Body() details: ResetPasswordDto) {
     return this.authService.resetPassword(details);
-  }
-
-  @Get('google')
-  @UseGuards(AuthGuard('google'))
-  async googleAuth(@Req() req) {}
-
-  @Get('google/redirect')
-  @UseGuards(AuthGuard('google'))
-  googleAuthRedirect(@Req() req) {
-    return this.authService.googleLogin(req);
   }
 
   @Get('check')
