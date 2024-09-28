@@ -1,24 +1,8 @@
-import {
-  Controller,
-  Get,
-  Post,
-  Body,
-  Patch,
-  Param,
-  Delete,
-  UseGuards,
-  Req,
-  Query,
-} from '@nestjs/common';
+import { Controller, Get, Post, Body, Param, Query } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { CreateAuthDto } from './dto/create-auth.dto';
-import { UpdateAuthDto } from './dto/update-auth.dto';
-import { handleResponse } from 'utils/helper-methods';
-import { AuthGuard } from '@nestjs/passport';
-import { User } from 'schemas/user.schema';
 import { OAuthProvider, QueryBy } from 'enum/common';
 import { SignInDto } from './dto/signin-auth.dto';
-import { ResponseStatus } from '../../../enum/common';
 import { ResetPasswordDto } from './dto/resetpassword-auth.dto';
 import { OAuthRequest } from 'interfaces/common';
 

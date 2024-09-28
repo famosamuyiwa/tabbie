@@ -1,5 +1,5 @@
-import { ValidationLogTracer } from 'schemas/validation-tracer';
+import { ValidationLog } from '@prisma/client';
 
 export class ValidationLogEventData {
-  constructor(public readonly eventData: ValidationLogTracer) {}
+  constructor(public readonly eventData: ValidationLog) {}
 }

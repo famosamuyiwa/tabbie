@@ -1,15 +1,15 @@
 // src/utils/validation-log.helper.ts
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { HttpException, HttpStatus, Logger } from '@nestjs/common';
-import { ValidationLogTracer } from 'schemas/validation-tracer';
 import { ValidationLogEventData } from 'utils/lib/validation-log-event-data';
+import { ValidationLog } from '@prisma/client';
 
 export class Utils {
   private readonly log = new Logger(Utils.name);
 
   constructor(private readonly eventEmitter: EventEmitter2) {}
 
-  createValidationLogEvent(data: ValidationLogTracer) {
+  createValidationLogEvent(data) {
     const isEmitted = this.eventEmitter.emit(
       'validation-log-tracer-event',
       new ValidationLogEventData(data),

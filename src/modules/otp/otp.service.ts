@@ -1,30 +1,27 @@
 import { HttpException, HttpStatus, Injectable, Logger } from '@nestjs/common';
-import { InjectModel } from '@nestjs/mongoose';
+import { OtpLog } from '@prisma/client';
 import { ResponseStatus } from 'enum/common';
 import { ApiResponse } from 'interfaces/common';
-import { Model } from 'mongoose';
-import { OTPLog } from 'schemas/otp-log';
+import { PrismaService } from 'src/prisma.service';
 
 @Injectable()
 export class OtpService {
   private readonly log = new Logger(OtpService.name);
 
-  constructor(@InjectModel(OTPLog.name) private otpLogModel: Model<OTPLog>) {}
+  constructor(private prisma: PrismaService) {}
 
   async createOTPLog(email: string, length?: number) {
     const configLength = length ?? 4;
     const token = this.generateOTP(configLength);
-    const otpLog: OTPLog = {
-      configLength,
+    const otpLog = {
+      configLength: '' + configLength,
       email,
       lifetime: new Date(Date.now() + 5 * 60 * 1000), // 5 minutes in milliseconds
       token,
       isDeactivated: false,
-      createdAt: new Date(),
-      updatedAt: new Date(),
     };
     try {
-      await new this.otpLogModel(otpLog).save();
+      await this.prisma.otpLog.create({ data: otpLog });
     } catch (err) {
       this.log.error(`${err}`);
 
@@ -45,9 +42,10 @@ export class OtpService {
       );
     }
     try {
-      const otpLog = await this.otpLogModel
-        .findOne({ email })
-        .sort({ createdAt: -1 }); // Sort by the 'createdAt' field in descending order
+      const otpLog = await this.prisma.otpLog.findFirst({
+        where: { email },
+        orderBy: { createdAt: 'desc' }, // Sort by the timestamp in descending order
+      });
 
       // If no otp is found, handle it with an error
       if (!otpLog) {
@@ -72,14 +70,20 @@ export class OtpService {
       }
 
       if (new Date() > otpLog.lifetime) {
-        await otpLog.updateOne({ isDeactivated: true, updatedAt: new Date() });
+        await this.prisma.otpLog.update({
+          where: otpLog,
+          data: { isDeactivated: true, updatedAt: new Date() },
+        });
         throw new HttpException(
           `Otp Log for ${email} is expired`,
           HttpStatus.UNAUTHORIZED,
         );
       }
 
-      await otpLog.updateOne({ isDeactivated: true, updatedAt: new Date() });
+      await this.prisma.otpLog.update({
+        where: otpLog,
+        data: { isDeactivated: true, updatedAt: new Date() },
+      });
 
       const payload: ApiResponse = {
         code: HttpStatus.OK,

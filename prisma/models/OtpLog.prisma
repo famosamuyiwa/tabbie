@@ -1,0 +1,10 @@
+model OtpLog {
+    id Int @id @default(autoincrement())
+    configLength String
+    token String
+    email String
+    lifetime DateTime
+    isDeactivated Boolean
+    createdAt DateTime @default(now())
+    updatedAt  DateTime @updatedAt()
+}

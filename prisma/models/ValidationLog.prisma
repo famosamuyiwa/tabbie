@@ -1,0 +1,9 @@
+model ValidationLog {
+    id Int @id @default(autoincrement())
+    uniqueId String
+    status String
+    message String
+    field String
+    createdAt DateTime @default(now())
+    updatedAt  DateTime @updatedAt()
+}

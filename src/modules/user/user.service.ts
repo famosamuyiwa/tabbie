@@ -1,15 +1,14 @@
 import { HttpException, HttpStatus, Injectable, Logger } from '@nestjs/common';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
-import { InjectModel } from '@nestjs/mongoose';
-import { Model } from 'mongoose';
-import { User } from 'schemas/user.schema';
 import { QueryBy } from 'enum/common';
+import { PrismaService } from 'src/prisma.service';
+import { User } from '@prisma/client';
 
 @Injectable()
 export class UserService {
   private readonly log = new Logger(UserService.name);
-  constructor(@InjectModel(User.name) private userModel: Model<User>) {}
+  constructor(private prisma: PrismaService) {}
 
   create(createUserDto: CreateUserDto) {
     return 'This action adds a new user';
@@ -19,7 +18,7 @@ export class UserService {
     try {
       this.log.log('Retrieving all users...');
 
-      const users = await this.userModel.find();
+      const users = await this.prisma.user.findMany();
 
       return users;
     } catch (err) {
@@ -51,20 +50,26 @@ export class UserService {
 
     switch (by) {
       case QueryBy.EMAIL:
-        query = { email: value };
+        query = {
+          where: { email: value },
+        };
         break;
       case QueryBy.USERNAME:
-        query = { username: value };
+        query = {
+          where: { username: value },
+        };
         break;
       case QueryBy.BOTH:
       default:
         query = {
-          $or: [{ email: value }, { username: value }],
+          where: {
+            OR: [{ email: value, username: value }],
+          },
         };
     }
 
     try {
-      let user = await this.userModel.findOne(query);
+      let user = await this.prisma.user.findFirst(query);
 
       // If no user is found, handle it with an error
       if (!user) {

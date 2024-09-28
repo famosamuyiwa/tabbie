@@ -1,19 +1,11 @@
 import { Module } from '@nestjs/common';
 import { OtpController } from './otp.controller';
 import { OtpService } from './otp.service';
-import { MongooseModule } from '@nestjs/mongoose';
-import { OTPLog, OTPLogSchema } from 'schemas/otp-log';
+import { PrismaService } from 'src/prisma.service';
 
 @Module({
-  imports: [
-    MongooseModule.forFeature([
-      {
-        name: OTPLog.name,
-        schema: OTPLogSchema,
-      },
-    ]),
-  ],
+  imports: [],
   controllers: [OtpController],
-  providers: [OtpService],
+  providers: [OtpService, PrismaService],
 })
 export class OtpModule {}

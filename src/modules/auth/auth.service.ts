@@ -7,40 +7,44 @@ import {
   forwardRef,
 } from '@nestjs/common';
 import { CreateAuthDto } from './dto/create-auth.dto';
-import { UpdateAuthDto } from './dto/update-auth.dto';
 import { ApiResponse, OAuthRequest } from 'interfaces/common';
-import { Model } from 'mongoose';
-import { InjectModel } from '@nestjs/mongoose';
-import * as jwt from 'jsonwebtoken';
 import * as bcrypt from 'bcrypt';
 import 'dotenv';
 import { OAuthProvider, QueryBy, ResponseStatus } from 'enum/common';
 import { UserService } from '../user/user.service';
 import { OtpService } from '../otp/otp.service';
-import { User } from 'schemas/user.schema';
 import { SignInDto } from './dto/signin-auth.dto';
 import { ResetPasswordDto } from './dto/resetpassword-auth.dto';
 import axios from 'axios';
+import { PrismaService } from 'src/prisma.service';
+import { User } from '@prisma/client';
+import { Utils } from 'utils/helper-methods';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 
 @Injectable()
 export class AuthService {
   private readonly log = new Logger(AuthService.name);
+  private validationLog: Utils;
+
   constructor(
-    @InjectModel(User.name) private userModel: Model<User>,
     @Inject(forwardRef(() => UserService))
     private readonly userService: UserService, // Inject user service
     @Inject(forwardRef(() => OtpService))
     private readonly otpService: OtpService, // Inject otp service
-  ) {}
+    private prisma: PrismaService,
+    private readonly eventEmitter: EventEmitter2,
+  ) {
+    this.validationLog = new Utils(this.eventEmitter);
+  }
 
   async register(userDetails: CreateAuthDto): Promise<ApiResponse<User>> {
     try {
       this.log.log('Retrieving all users...');
 
-      const { username, email, password } = userDetails;
+      const { username, email, password, name } = userDetails;
 
-      const userExist = await this.userModel.findOne({
-        $or: [{ username }, { email }],
+      const userExist = await this.prisma.user.findFirst({
+        where: { username, email },
       });
 
       if (userExist) {
@@ -50,13 +54,16 @@ export class AuthService {
         );
       }
 
-      const newUser = new this.userModel({
+      const hashedPassword = await bcrypt.hash(password, 10);
+
+      const newUser = {
+        name,
         username,
         email,
-        password,
-      });
+        password: hashedPassword,
+      };
 
-      const user = await newUser.save();
+      const user = await this.prisma.user.create({ data: newUser });
 
       delete user.password;
 
@@ -66,7 +73,12 @@ export class AuthService {
         message: 'user created successfully',
         data: user,
       };
-
+      this.validationLog.createValidationLogEvent({
+        uniqueId: '',
+        status: '',
+        message: '',
+        field: '',
+      });
       return payload;
     } catch (err) {
       this.log.error(`${err}`);
@@ -84,12 +96,11 @@ export class AuthService {
     try {
       const { emailOrUsername, password } = userDetails;
       // Check if username exists
-      const user = await this.userModel.findOne({
-        $or: [{ username: emailOrUsername }, { email: emailOrUsername }],
+      const user = await this.prisma.user.findFirst({
+        where: {
+          OR: [{ username: emailOrUsername }, { email: emailOrUsername }],
+        },
       });
-
-      // console.log(user);
-
       if (!user) {
         throw new HttpException(
           `Invalid username or password!`,
@@ -132,7 +143,6 @@ export class AuthService {
   async loginWithOAuth(credentials: OAuthRequest): Promise<ApiResponse<User>> {
     let user: User;
     const { token, provider } = credentials;
-
     if (!token) return;
     let url = '';
 
@@ -156,15 +166,14 @@ export class AuthService {
           HttpStatus.EXPECTATION_FAILED,
         );
       }
-
       // Check if username exists
-      user = await this.userModel.findOne({ email: data.email });
-
+      user = await this.prisma.user.findFirst({ where: { email: data.email } });
       if (!user) {
-        const newUser = new this.userModel({
+        const newUser = {
+          name: data.name,
           email: data.email,
-        });
-        user = await newUser.save();
+        };
+        user = await this.prisma.user.create({ data: newUser });
       }
       const payload: ApiResponse<User> = {
         code: HttpStatus.CREATED,
@@ -193,10 +202,10 @@ export class AuthService {
 
       password = await bcrypt.hash(password, 10);
 
-      const userExists = await this.userModel.findOneAndUpdate(
-        { email },
-        { password },
-      );
+      const userExists = await this.prisma.user.update({
+        where: { email },
+        data: { password },
+      });
 
       if (!userExists) {
         throw new HttpException(
