@@ -9,6 +9,17 @@ export enum QueryBy {
   BOTH = 'both',
 }
 
+export enum QueryAction {
+  ADD = 'ADD',
+  REMOVE = 'REMOVE',
+}
+
 export enum OAuthProvider {
   GOOGLE = 'GOOGLE',
+}
+
+export enum PaymentStatus {
+  PAID = 'PAID',
+  UNPAID = 'UNPAID',
+  PENDING = 'PENDING',
 }

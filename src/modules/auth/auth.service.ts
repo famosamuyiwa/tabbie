@@ -100,6 +100,13 @@ export class AuthService {
         where: {
           OR: [{ username: emailOrUsername }, { email: emailOrUsername }],
         },
+        include: {
+          friends: {
+            include: {
+              friend: true, // This includes the friend's user details
+            },
+          },
+        },
       });
       if (!user) {
         throw new HttpException(

@@ -1,0 +1,11 @@
+model SplitUser {
+  splitId   Int
+  userId    Int
+  createdAt DateTime @default(now()) 
+
+  split     Split  @relation(fields: [splitId], references: [id], onDelete: Cascade)
+  user      User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([splitId, userId])
+  @@map("split_users")
+}

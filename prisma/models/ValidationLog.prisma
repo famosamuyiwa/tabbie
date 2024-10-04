@@ -4,6 +4,8 @@ model ValidationLog {
     status String
     message String
     field String
-    createdAt DateTime @default(now())
-    updatedAt  DateTime @updatedAt()
+    createdAt DateTime @default(now()) 
+    updatedAt DateTime @updatedAt 
+
+  @@map("validation_log")
 }

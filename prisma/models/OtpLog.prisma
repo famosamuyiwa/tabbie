@@ -5,6 +5,8 @@ model OtpLog {
     email String
     lifetime DateTime
     isDeactivated Boolean
-    createdAt DateTime @default(now())
-    updatedAt  DateTime @updatedAt()
+    createdAt    DateTime @default(now())
+    updatedAt    DateTime @updatedAt 
+
+  @@map("otp_log")
 }

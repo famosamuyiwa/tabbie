@@ -19,3 +19,15 @@ export interface OAuthRequest {
   token: string;
   provider: OAuthProvider;
 }
+
+export interface Expense {
+  description: string;
+  totalAmount: string;
+  users: ExpenseUser[];
+}
+
+export interface ExpenseUser {
+  id: string;
+  amountPaid: string;
+  percentage: string;
+}

@@ -9,6 +9,8 @@ import { UserModule } from './modules/user/user.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { OtpModule } from './modules/otp/otp.module';
 import { PrismaService } from './prisma.service';
+import { SplitModule } from './modules/split/split.module';
+
 @Module({
   imports: [
     ConfigModule.forRoot(),
@@ -18,6 +20,7 @@ import { PrismaService } from './prisma.service';
     UserModule,
     AuthModule,
     OtpModule,
+    SplitModule,
   ],
   controllers: [AppController],
   providers: [AppService, ValidationLogEventListener, PrismaService],

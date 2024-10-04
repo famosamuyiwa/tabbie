@@ -1,5 +1,4 @@
 import { HttpException, HttpStatus, Injectable, Logger } from '@nestjs/common';
-import { OtpLog } from '@prisma/client';
 import { ResponseStatus } from 'enum/common';
 import { ApiResponse } from 'interfaces/common';
 import { PrismaService } from 'src/prisma.service';
@@ -8,7 +7,7 @@ import { PrismaService } from 'src/prisma.service';
 export class OtpService {
   private readonly log = new Logger(OtpService.name);
 
-  constructor(private prisma: PrismaService) {}
+  constructor(private readonly prisma: PrismaService) {}
 
   async createOTPLog(email: string, length?: number) {
     const configLength = length ?? 4;
