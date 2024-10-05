@@ -80,6 +80,7 @@ model Split {
 
   @@map("split")
   @@index([id])
+  @@index([creatorId])
   @@index([createdAt])
 }
 
@@ -138,6 +139,8 @@ model UserExpense {
   @@index([expenseId])
   @@index([userId])
   @@index([createdAt])
+  @@index([expenseId, userId]) // Composite index
+
 }
 
 model ValidationLog {

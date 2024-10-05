@@ -17,4 +17,6 @@ model UserExpense {
   @@index([expenseId])
   @@index([userId])
   @@index([createdAt])
+  @@index([expenseId, userId]) // Composite index
+
 }

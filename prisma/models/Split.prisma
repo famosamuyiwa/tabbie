@@ -15,5 +15,6 @@ model Split {
 
   @@map("split")
   @@index([id])
+  @@index([creatorId])
   @@index([createdAt])
 }
