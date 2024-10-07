@@ -43,7 +43,7 @@ export class UserController {
   }
 
   @Get('/friends/:id/search')
-  findOneFriendByName(
+  searchFriendsByName(
     @Param('id') id: string,
     @Query('searchTerm') searchTerm: string,
   ) {

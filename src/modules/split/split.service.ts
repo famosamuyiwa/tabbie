@@ -1,12 +1,15 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { HttpStatus, Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from 'src/prisma.service';
 import { CreateSplitDTO } from './dto/create-split';
+import { ApiResponse } from 'interfaces/common';
+import { ResponseStatus, SplitStatus } from 'enum/common';
 
 @Injectable()
 export class SplitService {
   private readonly log = new Logger(SplitService.name);
   constructor(private readonly prisma: PrismaService) {}
-  async createSplit(payload: CreateSplitDTO) {
+
+  async createSplit(data: CreateSplitDTO): Promise<ApiResponse> {
     try {
       const {
         name,
@@ -16,7 +19,7 @@ export class SplitService {
         creatorId,
         expenses,
         userIds,
-      } = payload;
+      } = data;
 
       const createdSplit = await this.prisma.$transaction(async (prisma) => {
         // Create the split
@@ -75,13 +78,44 @@ export class SplitService {
             userId: Number(participantId),
           })),
         });
-
         return createdSplit;
       });
-
-      return createdSplit;
+      const payload: ApiResponse = {
+        code: HttpStatus.CREATED,
+        status: ResponseStatus.SUCCESS,
+        message: 'split created successfully',
+        data: null,
+      };
+      return payload;
     } catch (error) {
       throw new Error(`Error creating split: ${error.message}`);
+    }
+  }
+
+  async findAllSplitByUserId(userId: string, status?: SplitStatus) {
+    try {
+      let splits = await this.prisma.splitUser.findMany({
+        where: {
+          userId: Number(userId),
+          split: {
+            status: status ?? undefined, //active or settled
+          },
+        },
+        include: {
+          split: {
+            include: {
+              users: {
+                include: {
+                  user: true,
+                },
+              },
+            },
+          },
+        },
+      });
+      return splits;
+    } catch (err) {
+      this.log.error(`${err}`);
     }
   }
 }

@@ -23,3 +23,8 @@ export enum PaymentStatus {
   UNPAID = 'UNPAID',
   PENDING = 'PENDING',
 }
+
+export enum SplitStatus {
+  ACTIVE = 'ACTIVE',
+  SETTLED = 'SETTLED',
+}

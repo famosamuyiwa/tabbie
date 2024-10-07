@@ -112,7 +112,6 @@ export class UserService {
     action: QueryAction,
   ): Promise<ApiResponse> {
     let message = '';
-
     if (!action) {
       throw new HttpException(
         'action query is required.',
@@ -166,7 +165,7 @@ export class UserService {
         code: HttpStatus.OK,
         status: ResponseStatus.SUCCESS,
         message,
-        data: null,
+        data: { friendId },
       };
 
       return payload;
@@ -187,8 +186,17 @@ export class UserService {
         include: {
           friend: true, // Include details of the friend
         },
+        orderBy: {
+          createdAt: 'desc',
+        },
       });
-      return friends;
+      const payload: ApiResponse<User[]> = {
+        code: HttpStatus.OK,
+        status: ResponseStatus.SUCCESS,
+        message: 'Friend search successful',
+        data: friends.map((f) => f.friend), // Return the friend details
+      };
+      return payload;
     } catch (err) {
       this.log.error(`${err}`);
     }
