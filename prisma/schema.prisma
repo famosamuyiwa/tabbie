@@ -11,8 +11,8 @@ generator client {
 
 model Expense {
   id          Int         @id @default(autoincrement())
-  splitId     Int        
-  description String
+  splitId     Int        @unique
+  description String?
   totalAmount String      
   createdAt   DateTime     @default(now())
   updatedAt   DateTime     @updatedAt
@@ -68,14 +68,14 @@ model Split {
   name       String
   category   String
   totalAmount String      
-  percentage String 
+  percentage String?       @default("0")
   creatorId Int      
   status String @default("ACTIVE")
   createdAt  DateTime      @default(now()) 
   updatedAt  DateTime      @updatedAt
 
   creator   User     @relation("CreatedSplits", fields: [creatorId], references: [id])  // Link to User entity  
-  expenses   Expense[]
+  expense   Expense?
   users      SplitUser[]
 
   @@map("split")
@@ -124,7 +124,8 @@ model UserExpense {
   id         Int         @id @default(autoincrement())
   userId     Int
   expenseId  Int
-  amountPaid String      
+  amountPaid String?    @default("0")  
+  amountOwed String     @default("0")
   percentage String      
   receipt    String?
   isPaid     Boolean       @default(false)

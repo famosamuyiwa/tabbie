@@ -11,15 +11,7 @@ export class SplitService {
 
   async createSplit(data: CreateSplitDTO): Promise<ApiResponse> {
     try {
-      const {
-        name,
-        category,
-        totalAmount,
-        percentage,
-        creatorId,
-        expenses,
-        userIds,
-      } = data;
+      const { name, category, totalAmount, creatorId, expense, userIds } = data;
 
       const createdSplit = await this.prisma.$transaction(async (prisma) => {
         // Create the split
@@ -28,7 +20,6 @@ export class SplitService {
             name,
             category,
             totalAmount,
-            percentage,
             creator: {
               connect: { id: Number(creatorId) },
             },
@@ -38,17 +29,15 @@ export class SplitService {
           },
         });
 
-        // Create expenses and user expenses in bulk
-        const expenseData = expenses.map(
-          ({ description, totalAmount: expenseTotalAmount }) => ({
-            splitId: createdSplit.id,
-            description,
-            totalAmount: expenseTotalAmount,
-          }),
-        );
+        // Create expense object
+        const expenseData = {
+          splitId: createdSplit.id,
+          description: expense.description ?? '',
+          totalAmount: expense.totalAmount,
+        };
 
-        // Bulk insert expenses and Retrieve created expenses
-        const expensesWithIds = await prisma.expense.createManyAndReturn({
+        // Insert expense and retrieve created expense
+        const expenseWithIds = await prisma.expense.create({
           data: expenseData,
           select: {
             id: true,
@@ -56,15 +45,12 @@ export class SplitService {
         });
 
         // Construct user expenses data
-        const userExpenseData = expenses.flatMap(({ users }, index) => {
-          const expenseId = expensesWithIds[index]?.id; // Use index to get the expense ID
-          return users.map((user) => ({
-            expenseId, // Link to the correct expense ID
-            userId: Number(user.id), // Ensure userId is a number
-            amountPaid: user.amountPaid,
-            percentage: user.percentage,
-          }));
-        });
+        const userExpenseData = expense.users.map((user) => ({
+          expenseId: expenseWithIds.id,
+          userId: Number(user.id), // Ensure userId is a number
+          percentage: user.percentage,
+          amountOwed: user.amountOwed,
+        }));
 
         // Bulk insert user expenses
         await prisma.userExpense.createMany({

@@ -23,28 +23,40 @@ export class UserController {
   }
 
   @Get(':id')
-  findOneById(@Param('id') id: string) {
+  findOneById(@Param('id') id: number) {
     return this.userService.findOneById(id);
   }
 
   @Put(':id')
-  update(@Param('id') id: string, @Body() updateUserDto: UpdateUserDto) {
+  update(@Param('id') id: number, @Body() updateUserDto: UpdateUserDto) {
     return this.userService.update(id, updateUserDto);
   }
 
   @Delete(':id')
-  remove(@Param('id') id: string) {
+  remove(@Param('id') id: number) {
     return this.userService.remove(id);
   }
 
   @Get('/friends/:id')
-  findAllFriendsById(@Param('id') id: string) {
-    return this.userService.findAllFriendsById(id);
+  findAllFriendsById(
+    @Param('id') id: number,
+    @Query('limit') limit: number,
+    @Query('cursor') cursor: number,
+  ) {
+    return this.userService.findAllFriendsById(id, cursor, limit);
+  }
+
+  @Get('/:id/search')
+  searchUsersByName(
+    @Param('id') id: number,
+    @Query('searchTerm') searchTerm: string,
+  ) {
+    return this.userService.searchUsersByName(id, searchTerm);
   }
 
   @Get('/friends/:id/search')
   searchFriendsByName(
-    @Param('id') id: string,
+    @Param('id') id: number,
     @Query('searchTerm') searchTerm: string,
   ) {
     return this.userService.searchFriendsByName(id, searchTerm);
@@ -52,8 +64,8 @@ export class UserController {
 
   @Post('/friends/:id/:friendId')
   updateFriendsByUserId(
-    @Param('id') id: string,
-    @Param('friendId') friendId: string,
+    @Param('id') id: number,
+    @Param('friendId') friendId: number,
     @Query('action') action: QueryAction,
   ) {
     return this.userService.updateFriendsByUserId(id, friendId, action);

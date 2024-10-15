@@ -21,13 +21,14 @@ export interface OAuthRequest {
 }
 
 export interface Expense {
-  description: string;
+  description?: string;
   totalAmount: string;
   users: ExpenseUser[];
 }
 
 export interface ExpenseUser {
-  id: string;
-  amountPaid: string;
+  id: number;
+  amountPaid?: string;
+  amountOwed: string;
   percentage: string;
 }

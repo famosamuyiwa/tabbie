@@ -1,7 +1,7 @@
 model Expense {
   id          Int         @id @default(autoincrement())
-  splitId     Int        
-  description String
+  splitId     Int        @unique
+  description String?
   totalAmount String      
   createdAt   DateTime     @default(now())
   updatedAt   DateTime     @updatedAt

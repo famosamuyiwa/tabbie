@@ -18,12 +18,7 @@ export class CreateSplitDTO {
   @IsNotEmpty()
   totalAmount: string;
 
-  @IsString()
-  @IsNotEmpty()
-  percentage: string;
-
-  @IsArray() // To validate expenses as an array of objects
-  expenses: Expense[];
+  expense: Expense;
 
   @IsArray() // To validate userIds as an array of integers
   userIds: string[];

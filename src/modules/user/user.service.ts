@@ -23,11 +23,11 @@ export class UserService {
     }
   }
 
-  async findOneById(id: string) {
+  async findOneById(id: number) {
     try {
       let user = await this.prisma.user.findFirst({
         where: {
-          id: Number(id),
+          id: id,
         },
       });
 
@@ -48,11 +48,11 @@ export class UserService {
     }
   }
 
-  update(id: string, updateUserDto: UpdateUserDto) {
+  update(id: number, updateUserDto: UpdateUserDto) {
     return `This action updates a #${id} user`;
   }
 
-  remove(id: string) {
+  remove(id: number) {
     return `This action removes a #${id} user`;
   }
 
@@ -107,8 +107,8 @@ export class UserService {
   }
 
   async updateFriendsByUserId(
-    userId: string,
-    friendId: string,
+    userId: number,
+    friendId: number,
     action: QueryAction,
   ): Promise<ApiResponse> {
     let message = '';
@@ -177,40 +177,48 @@ export class UserService {
     }
   }
 
-  async findAllFriendsById(id: string) {
+  async findAllFriendsById(id: number, cursor?: number, limit?: number) {
     try {
-      let friends = await this.prisma.friends.findMany({
+      const friends = await this.prisma.friends.findMany({
         where: {
-          userId: Number(id), // Friends initiated by the user
+          userId: id, // Friends initiated by the user
         },
         include: {
           friend: true, // Include details of the friend
         },
+        take: limit || 5,
+        skip: cursor ? 1 : 0, // Skip 1 if using a cursor
+        ...(cursor && { cursor: { id: cursor } }), // Use the cursor if provided
         orderBy: {
-          createdAt: 'desc',
+          createdAt: 'asc',
         },
       });
+
+      const nextCursor = friends.length ? friends[friends.length - 1].id : null; // Determine next cursor
+
       const payload: ApiResponse<User[]> = {
         code: HttpStatus.OK,
         status: ResponseStatus.SUCCESS,
         message: 'Friend search successful',
-        data: friends.map((f) => f.friend), // Return the friend details
+        data: friends.map((f) => ({ ...f.friend, isFriend: true })), // Return the friend details
       };
-      return payload;
+
+      return { ...payload, nextCursor }; // Return the next cursor as part of the response
     } catch (err) {
       this.log.error(`${err}`);
+      throw new Error('Failed to fetch friends');
     }
   }
 
   async searchFriendsByName(
-    userId: string,
+    userId: number,
     searchTerm: string,
   ): Promise<ApiResponse<User[]>> {
     try {
       // Query to find friends by name (or any other field, like username or email)
       const friends = await this.prisma.friends.findMany({
         where: {
-          userId: Number(userId), // Only search within the current user's friends list
+          userId: userId, // Only search within the current user's friends list
           friend: {
             name: {
               contains: searchTerm, // Search for partial match of the friend's name
@@ -227,7 +235,57 @@ export class UserService {
         code: HttpStatus.OK,
         status: ResponseStatus.SUCCESS,
         message: 'Friend search successful',
-        data: friends.map((f) => f.friend), // Return the friend details
+        data: friends.map((f) => ({ ...f.friend, isFriend: true })), // Return the friend details
+      };
+      return payload;
+    } catch (err) {
+      this.log.error(`${err}`);
+      throw new Error(`Failed to search friends: ${err.message}`);
+    }
+  }
+
+  async searchUsersByName(
+    userId: number,
+    searchTerm: string,
+  ): Promise<ApiResponse<User[]>> {
+    try {
+      // Query to find users by name (or any other field, like username or email)
+      const users = await this.prisma.user.findMany({
+        where: {
+          id: {
+            not: userId, // Exclude the current user from the search results
+          },
+          name: {
+            contains: searchTerm, // Search for partial match of the user's name
+            mode: 'insensitive', // Case-insensitive search
+          },
+        },
+      });
+
+      // Fetch the friends of the current user
+      const friends = await this.prisma.friends.findMany({
+        where: {
+          userId: userId,
+        },
+        select: {
+          friendId: true,
+        },
+      });
+
+      // Extract friend IDs for easy comparison
+      const friendIds = friends.map((friend) => friend.friendId);
+
+      // Add an `isFriend` field to each user in the search results
+      const usersWithFriendStatus = users.map((user) => ({
+        ...user,
+        isFriend: friendIds.includes(user.id),
+      }));
+
+      const payload: ApiResponse<User[]> = {
+        code: HttpStatus.OK,
+        status: ResponseStatus.SUCCESS,
+        message: 'Friend search successful',
+        data: usersWithFriendStatus,
       };
       return payload;
     } catch (err) {
