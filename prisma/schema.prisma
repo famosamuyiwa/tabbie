@@ -68,7 +68,7 @@ model Split {
   name       String
   category   String
   totalAmount String      
-  percentage String?       @default("0")
+  percentage Float?       @default(0.00)
   creatorId Int      
   status String @default("ACTIVE")
   createdAt  DateTime      @default(now()) 
@@ -85,6 +85,7 @@ model Split {
 }
 
 model SplitUser {
+  id        Int     @default(autoincrement())
   splitId   Int
   userId    Int
   createdAt DateTime @default(now()) 
@@ -126,7 +127,7 @@ model UserExpense {
   expenseId  Int
   amountPaid String?    @default("0")  
   amountOwed String     @default("0")
-  percentage String      
+  percentage Float      
   receipt    String?
   isPaid     Boolean       @default(false)
   status     String         @default("UNPAID")

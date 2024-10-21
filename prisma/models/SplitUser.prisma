@@ -1,4 +1,5 @@
 model SplitUser {
+  id        Int     @default(autoincrement())
   splitId   Int
   userId    Int
   createdAt DateTime @default(now()) 

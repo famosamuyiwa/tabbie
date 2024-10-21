@@ -30,5 +30,5 @@ export interface ExpenseUser {
   id: number;
   amountPaid?: string;
   amountOwed: string;
-  percentage: string;
+  percentage: number;
 }

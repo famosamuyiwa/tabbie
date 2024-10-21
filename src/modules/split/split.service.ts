@@ -3,6 +3,7 @@ import { PrismaService } from 'src/prisma.service';
 import { CreateSplitDTO } from './dto/create-split';
 import { ApiResponse } from 'interfaces/common';
 import { ResponseStatus, SplitStatus } from 'enum/common';
+import { Split, SplitUser } from '@prisma/client';
 
 @Injectable()
 export class SplitService {
@@ -78,19 +79,23 @@ export class SplitService {
     }
   }
 
-  async findAllSplitByUserId(userId: string, status?: SplitStatus) {
+  async findAllSplitByUserId(
+    userId: number,
+    status?: SplitStatus,
+    cursor?: number,
+    limit?: number,
+  ) {
     try {
-      let splits = await this.prisma.splitUser.findMany({
+      // Fetch splits with the related expenses and user expenses
+      let splits = await this.prisma.split.findMany({
         where: {
-          userId: Number(userId),
-          split: {
-            status: status ?? undefined, //active or settled
-          },
+          creatorId: userId,
+          status: status ?? undefined, // active or settled
         },
         include: {
-          split: {
+          expense: {
             include: {
-              users: {
+              userExpenses: {
                 include: {
                   user: true,
                 },
@@ -98,10 +103,48 @@ export class SplitService {
             },
           },
         },
+        take: limit || 5,
+        skip: cursor ? 1 : 0, // Skip 1 if using a cursor
+        ...(cursor && { cursor: { id: cursor } }), // Use the cursor if provided
+        orderBy: {
+          createdAt: 'asc',
+        },
       });
-      return splits;
+
+      // Calculate the sum of percentages paid for each split
+      const splitsWithAggregates = await Promise.all(
+        splits.map(async (split) => {
+          const totalPaidPercentage = await this.prisma.userExpense.aggregate({
+            where: {
+              expenseId: split.expense.id, // Match by expense ID
+              isPaid: true, // Only consider paid user expenses
+            },
+            _sum: {
+              percentage: true, // Sum of the percentage field
+            },
+          });
+
+          // Return the split with the total paid percentage included
+          return {
+            ...split,
+            percentage: totalPaidPercentage._sum.percentage || 0, // Default to 0 if no paid expenses
+          };
+        }),
+      );
+
+      const nextCursor = splits.length ? splits[splits.length - 1].id : null;
+
+      const payload: ApiResponse<Split[]> = {
+        code: HttpStatus.OK,
+        status: ResponseStatus.SUCCESS,
+        message: 'Split fetch successful',
+        data: splitsWithAggregates, // Use the updated splits with aggregates
+      };
+
+      return { ...payload, nextCursor }; // Return the next cursor as part of the response
     } catch (err) {
       this.log.error(`${err}`);
+      throw new Error('Failed to fetch splits'); // Consider throwing an error to handle it further up
     }
   }
 }

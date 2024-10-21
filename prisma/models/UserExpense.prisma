@@ -4,7 +4,7 @@ model UserExpense {
   expenseId  Int
   amountPaid String?    @default("0")  
   amountOwed String     @default("0")
-  percentage String      
+  percentage Float      
   receipt    String?
   isPaid     Boolean       @default(false)
   status     String         @default("UNPAID")

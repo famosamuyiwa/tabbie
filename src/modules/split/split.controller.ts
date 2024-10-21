@@ -9,10 +9,17 @@ export class SplitController {
 
   @Get('/:userId')
   findAllSplitByUserId(
-    @Param('userId') userId: string,
+    @Param('userId') userId: number,
     @Query('status') status: SplitStatus,
+    @Query('limit') limit: number,
+    @Query('cursor') cursor: number,
   ) {
-    return this.splitService.findAllSplitByUserId(userId, status);
+    return this.splitService.findAllSplitByUserId(
+      userId,
+      status,
+      cursor,
+      limit,
+    );
   }
 
   @Post()

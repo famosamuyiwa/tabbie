@@ -10,6 +10,7 @@ import { AuthModule } from './modules/auth/auth.module';
 import { OtpModule } from './modules/otp/otp.module';
 import { PrismaService } from './prisma.service';
 import { SplitModule } from './modules/split/split.module';
+import { ExpenseModule } from './modules/expense/expense.module';
 
 @Module({
   imports: [
@@ -21,6 +22,7 @@ import { SplitModule } from './modules/split/split.module';
     AuthModule,
     OtpModule,
     SplitModule,
+    ExpenseModule,
   ],
   controllers: [AppController],
   providers: [AppService, ValidationLogEventListener, PrismaService],
