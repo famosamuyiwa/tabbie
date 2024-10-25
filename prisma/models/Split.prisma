@@ -3,6 +3,7 @@ model Split {
   name       String
   category   String
   totalAmount String      
+  percentage Float?       @default(0)
   creatorId Int      
   status String @default("ACTIVE")
   createdAt  DateTime      @default(now()) 

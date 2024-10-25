@@ -48,6 +48,28 @@ export class UserService {
     }
   }
 
+  async getUserByUserId(id: number): Promise<ApiResponse<User>> {
+    try {
+      const user = await this.findOneById(id);
+      const payload: ApiResponse<User> = {
+        code: HttpStatus.OK,
+        status: ResponseStatus.SUCCESS,
+        message: 'User fetched successful',
+        data: user,
+      };
+      return payload;
+    } catch (err) {
+      this.log.error(`${err}`);
+
+      // Check if the error is a ConflictException
+      if (err instanceof HttpException) {
+        throw err; // Re-throw the Conflict exception
+      } else {
+        throw new HttpException(err, HttpStatus.INTERNAL_SERVER_ERROR);
+      }
+    }
+  }
+
   update(id: number, updateUserDto: UpdateUserDto) {
     return `This action updates a #${id} user`;
   }

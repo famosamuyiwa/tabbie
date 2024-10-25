@@ -1,6 +1,6 @@
-import { HttpStatus, Injectable, Logger } from '@nestjs/common';
+import { HttpException, HttpStatus, Injectable, Logger } from '@nestjs/common';
 import { ResponseStatus } from 'enum/common';
-import { ApiResponse } from 'interfaces/common';
+import { ApiResponse, markAsPaid } from 'interfaces/common';
 import { PrismaService } from 'src/prisma.service';
 
 @Injectable()
@@ -29,6 +29,40 @@ export class ExpenseService {
       return payload;
     } catch (err) {
       this.log.error(`${err}`);
+    }
+  }
+
+  async markExpensesAsPaid({ expenseIds, splitId }: markAsPaid) {
+    if (!expenseIds) {
+      throw new HttpException(
+        'expenseIds is required.',
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+
+    try {
+      const result = await this.prisma.userExpense.updateMany({
+        where: {
+          id: { in: expenseIds }, // Update expenses where the ID is in the provided array
+        },
+        data: {
+          isPaid: true, // Update isPaid to true
+          status: 'PAID', // Optionally update status as well if required
+        },
+      });
+
+      this.updateSplitPercentage(splitId);
+
+      const payload: ApiResponse = {
+        code: HttpStatus.CREATED,
+        status: ResponseStatus.SUCCESS,
+        message: 'Expenses updated successfully',
+        data: { count: result.count }, // Count of updated records
+      };
+      return payload;
+    } catch (err) {
+      this.log.error(`${err}`);
+      // Handle error appropriately
     }
   }
 

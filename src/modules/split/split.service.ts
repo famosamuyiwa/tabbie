@@ -86,11 +86,10 @@ export class SplitService {
     limit?: number,
   ) {
     try {
-      // Fetch splits with the related expenses and user expenses
       let splits = await this.prisma.split.findMany({
         where: {
           creatorId: userId,
-          status: status ?? undefined, // active or settled
+          status: status ?? undefined, //active or settled
         },
         include: {
           expense: {
@@ -111,40 +110,18 @@ export class SplitService {
         },
       });
 
-      // Calculate the sum of percentages paid for each split
-      const splitsWithAggregates = await Promise.all(
-        splits.map(async (split) => {
-          const totalPaidPercentage = await this.prisma.userExpense.aggregate({
-            where: {
-              expenseId: split.expense.id, // Match by expense ID
-              isPaid: true, // Only consider paid user expenses
-            },
-            _sum: {
-              percentage: true, // Sum of the percentage field
-            },
-          });
-
-          // Return the split with the total paid percentage included
-          return {
-            ...split,
-            percentage: totalPaidPercentage._sum.percentage || 0, // Default to 0 if no paid expenses
-          };
-        }),
-      );
-
       const nextCursor = splits.length ? splits[splits.length - 1].id : null;
 
       const payload: ApiResponse<Split[]> = {
         code: HttpStatus.OK,
         status: ResponseStatus.SUCCESS,
         message: 'Split fetch successful',
-        data: splitsWithAggregates, // Use the updated splits with aggregates
+        data: splits,
       };
 
       return { ...payload, nextCursor }; // Return the next cursor as part of the response
     } catch (err) {
       this.log.error(`${err}`);
-      throw new Error('Failed to fetch splits'); // Consider throwing an error to handle it further up
     }
   }
 }

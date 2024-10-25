@@ -23,8 +23,8 @@ export class UserController {
   }
 
   @Get(':id')
-  findOneById(@Param('id') id: number) {
-    return this.userService.findOneById(id);
+  getUserByUserId(@Param('id') id: number) {
+    return this.userService.getUserByUserId(id);
   }
 
   @Put(':id')

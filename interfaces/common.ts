@@ -32,3 +32,8 @@ export interface ExpenseUser {
   amountOwed: string;
   percentage: number;
 }
+
+export interface markAsPaid {
+  expenseIds: number[];
+  splitId: number;
+}
