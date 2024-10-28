@@ -88,8 +88,11 @@ export class SplitService {
     try {
       let splits = await this.prisma.split.findMany({
         where: {
-          creatorId: userId,
-          status: status ?? undefined, //active or settled
+          OR: [
+            { creatorId: userId },
+            { users: { some: { userId: userId } } }, // Check if user is a participant
+          ],
+          status: status ?? undefined, // Filter by status if provided
         },
         include: {
           expense: {

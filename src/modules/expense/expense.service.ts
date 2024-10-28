@@ -8,7 +8,7 @@ export class ExpenseService {
   private readonly log = new Logger(ExpenseService.name);
   constructor(private readonly prisma: PrismaService) {}
 
-  async markExpenseAsPaid(expenseId: number) {
+  async markExpenseAsPaid(expenseId: number, receipt: string = null) {
     try {
       await this.prisma.userExpense.update({
         where: {
@@ -17,6 +17,7 @@ export class ExpenseService {
         data: {
           isPaid: true, // Update isPaid to true
           status: 'PAID', // Optionally update status as well if required
+          receipt,
         },
       });
 
@@ -32,7 +33,11 @@ export class ExpenseService {
     }
   }
 
-  async markExpensesAsPaid({ expenseIds, splitId }: markAsPaid) {
+  async markExpensesAsPaid({
+    expenseIds,
+    splitId,
+    receipt = null,
+  }: markAsPaid) {
     if (!expenseIds) {
       throw new HttpException(
         'expenseIds is required.',
@@ -48,6 +53,7 @@ export class ExpenseService {
         data: {
           isPaid: true, // Update isPaid to true
           status: 'PAID', // Optionally update status as well if required
+          receipt,
         },
       });
 
