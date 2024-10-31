@@ -4,6 +4,7 @@ import { CreateSplitDTO } from './dto/create-split';
 import { ApiResponse } from 'interfaces/common';
 import { ResponseStatus, SplitStatus } from 'enum/common';
 import { Split, SplitUser } from '@prisma/client';
+import { getSplitsWhere } from 'utils/helper-methods';
 
 @Injectable()
 export class SplitService {
@@ -87,13 +88,7 @@ export class SplitService {
   ) {
     try {
       let splits = await this.prisma.split.findMany({
-        where: {
-          OR: [
-            { creatorId: userId },
-            { users: { some: { userId: userId } } }, // Check if user is a participant
-          ],
-          status: status ?? undefined, // Filter by status if provided
-        },
+        where: await getSplitsWhere(userId, status),
         include: {
           expense: {
             include: {
@@ -109,10 +104,11 @@ export class SplitService {
         skip: cursor ? 1 : 0, // Skip 1 if using a cursor
         ...(cursor && { cursor: { id: cursor } }), // Use the cursor if provided
         orderBy: {
-          createdAt: 'asc',
+          createdAt: 'desc', // Changed to descending order
         },
       });
 
+      // Get the cursor from the first record since we're going in descending order
       const nextCursor = splits.length ? splits[splits.length - 1].id : null;
 
       const payload: ApiResponse<Split[]> = {

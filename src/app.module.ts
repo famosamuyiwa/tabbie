@@ -1,7 +1,6 @@
 import { Module } from '@nestjs/common';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
-import { MongooseModule } from '@nestjs/mongoose';
 import { ValidationLogEventListener } from 'utils/lib/validation-log-event-listener';
 import { EventEmitterModule } from '@nestjs/event-emitter';
 import { ConfigModule } from '@nestjs/config';
@@ -16,7 +15,6 @@ import { ExpenseModule } from './modules/expense/expense.module';
   imports: [
     ConfigModule.forRoot(),
     // ChatModule,
-    MongooseModule.forRoot(process.env.MONGODB_URI),
     EventEmitterModule.forRoot(),
     UserModule,
     AuthModule,

@@ -1,5 +1,5 @@
 import { HttpException, HttpStatus, Injectable, Logger } from '@nestjs/common';
-import { ResponseStatus } from 'enum/common';
+import { PaymentStatus, ResponseStatus, SplitStatus } from 'enum/common';
 import { ApiResponse, markAsPaid } from 'interfaces/common';
 import { PrismaService } from 'src/prisma.service';
 
@@ -8,7 +8,8 @@ export class ExpenseService {
   private readonly log = new Logger(ExpenseService.name);
   constructor(private readonly prisma: PrismaService) {}
 
-  async markExpenseAsPaid(expenseId: number, receipt: string = null) {
+  async markExpenseAsPaid({ expenseIds, splitId, receipt = null }: markAsPaid) {
+    const expenseId = expenseIds[0];
     try {
       await this.prisma.userExpense.update({
         where: {
@@ -20,6 +21,8 @@ export class ExpenseService {
           receipt,
         },
       });
+
+      this.updateSplitPercentage(splitId);
 
       const payload: ApiResponse = {
         code: HttpStatus.CREATED,
@@ -37,6 +40,8 @@ export class ExpenseService {
     expenseIds,
     splitId,
     receipt = null,
+    userId,
+    creatorId,
   }: markAsPaid) {
     if (!expenseIds) {
       throw new HttpException(
@@ -51,13 +56,14 @@ export class ExpenseService {
           id: { in: expenseIds }, // Update expenses where the ID is in the provided array
         },
         data: {
-          isPaid: true, // Update isPaid to true
-          status: 'PAID', // Optionally update status as well if required
+          isPaid: userId === creatorId,
+          status:
+            userId === creatorId ? PaymentStatus.PAID : PaymentStatus.PENDING, // Optionally update status as well if required
           receipt,
         },
       });
 
-      this.updateSplitPercentage(splitId);
+      if (userId === creatorId) await this.updateSplitPercentage(splitId);
 
       const payload: ApiResponse = {
         code: HttpStatus.CREATED,
@@ -92,6 +98,10 @@ export class ExpenseService {
     const updatedSplit = await this.prisma.split.update({
       where: {
         id: splitId,
+        status:
+          totalPaidPercentage === 100
+            ? SplitStatus.SETTLED
+            : SplitStatus.ACTIVE,
       },
       data: {
         percentage: totalPaidPercentage, // Save as string or number as needed

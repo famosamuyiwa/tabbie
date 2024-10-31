@@ -37,4 +37,6 @@ export interface markAsPaid {
   expenseIds: number[];
   splitId: number;
   receipt?: string;
+  creatorId: string;
+  userId: string;
 }

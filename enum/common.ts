@@ -27,6 +27,7 @@ export enum PaymentStatus {
 export enum SplitStatus {
   ACTIVE = 'ACTIVE',
   SETTLED = 'SETTLED',
+  ALL = 'ALL',
 }
 
 export enum CategoryIcons {
@@ -41,4 +42,9 @@ export enum CategoryIcons {
   UTILITY = 'Utility',
   FITNESS = 'Fitness',
   SUBSCRIPTION = 'Subscription',
+}
+
+export enum SplitMemberType {
+  CREATOR = 'CREATOR',
+  MEMBER = 'MEMBER',
 }
