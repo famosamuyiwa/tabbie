@@ -1,10 +1,10 @@
-import { IsArray, IsInt, IsNotEmpty, IsString } from 'class-validator';
+import { IsArray, IsNotEmpty, IsString } from 'class-validator';
+import { CategoryIcons } from 'enum/common';
 import { Expense } from 'interfaces/common';
 
 export class CreateSplitDTO {
-  @IsString()
   @IsNotEmpty()
-  creatorId: string;
+  creatorId: number;
 
   @IsString()
   @IsNotEmpty()
@@ -12,7 +12,7 @@ export class CreateSplitDTO {
 
   @IsString()
   @IsNotEmpty()
-  category: string;
+  category: CategoryIcons;
 
   @IsString()
   @IsNotEmpty()

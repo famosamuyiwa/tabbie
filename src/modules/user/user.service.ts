@@ -70,7 +70,35 @@ export class UserService {
     }
   }
 
-  update(id: number, updateUserDto: UpdateUserDto) {
+  async update(id: number, updateUserDto: UpdateUserDto) {
+    try {
+      const user = await this.prisma.user.update({
+        where: {
+          id,
+        },
+        data: {
+          ...updateUserDto,
+        },
+      });
+
+      const payload: ApiResponse = {
+        code: HttpStatus.OK,
+        status: ResponseStatus.SUCCESS,
+        message: 'User updated successfully',
+        data: { user },
+      };
+
+      return payload;
+    } catch (err) {
+      this.log.error(`${err}`);
+
+      // Check if the error is a ConflictException
+      if (err instanceof HttpException) {
+        throw err; // Re-throw the Conflict exception
+      } else {
+        throw new HttpException(err, HttpStatus.INTERNAL_SERVER_ERROR);
+      }
+    }
     return `This action updates a #${id} user`;
   }
 

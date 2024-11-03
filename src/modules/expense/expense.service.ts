@@ -1,6 +1,6 @@
 import { HttpException, HttpStatus, Injectable, Logger } from '@nestjs/common';
 import { PaymentStatus, ResponseStatus, SplitStatus } from 'enum/common';
-import { ApiResponse, markAsPaid } from 'interfaces/common';
+import { ApiResponse, MarkAsPaid } from 'interfaces/common';
 import { PrismaService } from 'src/prisma.service';
 
 @Injectable()
@@ -8,7 +8,7 @@ export class ExpenseService {
   private readonly log = new Logger(ExpenseService.name);
   constructor(private readonly prisma: PrismaService) {}
 
-  async markExpenseAsPaid({ expenseIds, splitId, receipt = null }: markAsPaid) {
+  async markExpenseAsPaid({ expenseIds, splitId, receipt = null }: MarkAsPaid) {
     const expenseId = expenseIds[0];
     try {
       await this.prisma.userExpense.update({
@@ -42,14 +42,17 @@ export class ExpenseService {
     receipt = null,
     userId,
     creatorId,
-  }: markAsPaid) {
+  }: MarkAsPaid) {
     if (!expenseIds) {
       throw new HttpException(
         'expenseIds is required.',
         HttpStatus.BAD_REQUEST,
       );
     }
-
+    console.log('expenseIds: ', expenseIds);
+    console.log('splitId: ', splitId);
+    console.log('userId: ', userId);
+    console.log('creatorId: ', creatorId);
     try {
       const result = await this.prisma.userExpense.updateMany({
         where: {
@@ -98,13 +101,11 @@ export class ExpenseService {
     const updatedSplit = await this.prisma.split.update({
       where: {
         id: splitId,
-        status:
-          totalPaidPercentage === 100
-            ? SplitStatus.SETTLED
-            : SplitStatus.ACTIVE,
       },
       data: {
         percentage: totalPaidPercentage, // Save as string or number as needed
+        status:
+          totalPaidPercentage >= 100 ? SplitStatus.SETTLED : SplitStatus.ACTIVE,
       },
     });
 

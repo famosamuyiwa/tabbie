@@ -3,7 +3,7 @@ import { PrismaService } from 'src/prisma.service';
 import { CreateSplitDTO } from './dto/create-split';
 import { ApiResponse } from 'interfaces/common';
 import { ResponseStatus, SplitStatus } from 'enum/common';
-import { Split, SplitUser } from '@prisma/client';
+import { Split } from '@prisma/client';
 import { getSplitsWhere } from 'utils/helper-methods';
 
 @Injectable()
@@ -12,10 +12,12 @@ export class SplitService {
   constructor(private readonly prisma: PrismaService) {}
 
   async createSplit(data: CreateSplitDTO): Promise<ApiResponse> {
+    console.log('split: ', data);
+    console.log('splitExpense: ', data.expense);
     try {
       const { name, category, totalAmount, creatorId, expense, userIds } = data;
 
-      const createdSplit = await this.prisma.$transaction(async (prisma) => {
+      await this.prisma.$transaction(async (prisma) => {
         // Create the split
         const createdSplit = await prisma.split.create({
           data: {

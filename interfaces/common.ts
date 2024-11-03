@@ -1,4 +1,4 @@
-import { OAuthProvider } from 'enum/common';
+import { CategoryIcons, NotificationType, OAuthProvider } from 'enum/common';
 
 export interface ApiResponse<T = any> {
   code: number;
@@ -33,10 +33,18 @@ export interface ExpenseUser {
   percentage: number;
 }
 
-export interface markAsPaid {
+export interface MarkAsPaid {
   expenseIds: number[];
   splitId: number;
   receipt?: string;
   creatorId: string;
   userId: string;
+}
+
+export interface Notification {
+  category?: CategoryIcons;
+  avatar?: string;
+  message: string;
+  type: NotificationType;
+  timestamp: Date;
 }

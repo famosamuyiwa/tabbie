@@ -1,6 +1,6 @@
 import { Body, Controller, Param, Post } from '@nestjs/common';
 import { ExpenseService } from './expense.service';
-import { markAsPaid } from 'interfaces/common';
+import { MarkAsPaid } from 'interfaces/common';
 import { SplitMemberType } from 'enum/common';
 
 @Controller('expense')
@@ -9,7 +9,7 @@ export class ExpenseController {
 
   @Post('/mark-paid/:memberType')
   markExpensesAsPaid(
-    @Body() payload: markAsPaid,
+    @Body() payload: MarkAsPaid,
     @Param('memberType') memberType: SplitMemberType,
   ) {
     if (memberType === SplitMemberType.CREATOR) {
