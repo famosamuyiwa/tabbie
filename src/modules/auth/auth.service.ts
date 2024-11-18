@@ -87,7 +87,7 @@ export class AuthService {
         username,
         email,
         referralCode: myReferralCode,
-        referredById: referrer.id ?? null,
+        referredById: referrer?.id ?? null,
       };
 
       const user = await this.prisma.user.create({ data: newUser });
@@ -279,7 +279,7 @@ export class AuthService {
         where: { id: userId },
         data: {
           username,
-          referredById: referrer.id ?? null,
+          referredById: referrer?.id ?? null,
         },
       });
 
