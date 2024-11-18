@@ -2,7 +2,7 @@ model Split {
   id         Int          @id @default(autoincrement())
   name       String
   category   String
-  totalAmount String      
+  totalAmount Float      
   percentage Float?       @default(0)
   creatorId Int      
   status String @default("ACTIVE")

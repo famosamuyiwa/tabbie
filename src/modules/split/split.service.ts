@@ -4,7 +4,7 @@ import { CreateSplitDTO } from './dto/create-split';
 import { ApiResponse } from 'interfaces/common';
 import { ResponseStatus, SplitStatus } from 'enum/common';
 import { Split } from '@prisma/client';
-import { getSplitsWhere } from 'utils/helper-methods';
+import { getSplitsWhere, to2DecimalPoints } from 'utils/helper-methods';
 
 @Injectable()
 export class SplitService {
@@ -12,8 +12,6 @@ export class SplitService {
   constructor(private readonly prisma: PrismaService) {}
 
   async createSplit(data: CreateSplitDTO): Promise<ApiResponse> {
-    console.log('split: ', data);
-    console.log('splitExpense: ', data.expense);
     try {
       const { name, category, totalAmount, creatorId, expense, userIds } = data;
 
@@ -49,12 +47,43 @@ export class SplitService {
         });
 
         // Construct user expenses data
-        const userExpenseData = expense.users.map((user) => ({
-          expenseId: expenseWithIds.id,
-          userId: Number(user.id), // Ensure userId is a number
-          percentage: user.percentage,
-          amountOwed: user.amountOwed,
-        }));
+        const userExpenseData = expense.users.map((user, index) => {
+          // Ensure numeric values
+          const currentAmountOwed = user.amountOwed;
+          const total = totalAmount;
+
+          // Base percentage calculation
+          let adjustedPercentage: number;
+
+          if (index === 0) {
+            // For first user, calculate base percentage
+            const basePercentage = to2DecimalPoints(
+              (currentAmountOwed / total) * 100,
+            );
+
+            // Calculate what the total percentage would be with all base percentages
+            const totalBasePercentage = expense.users.reduce(
+              (sum, u) => sum + to2DecimalPoints((u.amountOwed / total) * 100),
+              0,
+            );
+
+            // Add any remainder to first user's percentage
+            const remainder = to2DecimalPoints(100 - totalBasePercentage);
+            adjustedPercentage = to2DecimalPoints(basePercentage + remainder);
+          } else {
+            // Other users just get their base percentage
+            adjustedPercentage = to2DecimalPoints(
+              (currentAmountOwed / total) * 100,
+            );
+          }
+
+          return {
+            expenseId: expenseWithIds.id,
+            userId: Number(user.id),
+            percentage: adjustedPercentage,
+            amountOwed: currentAmountOwed,
+          };
+        });
 
         // Bulk insert user expenses
         await prisma.userExpense.createMany({

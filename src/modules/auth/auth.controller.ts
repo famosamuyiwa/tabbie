@@ -1,10 +1,10 @@
-import { Controller, Get, Post, Body, Param, Query } from '@nestjs/common';
+import { Controller, Get, Post, Body, Param, Query, Put } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { CreateAuthDto } from './dto/create-auth.dto';
 import { OAuthProvider, QueryBy } from 'enum/common';
 import { SignInDto } from './dto/signin-auth.dto';
 import { ResetPasswordDto } from './dto/resetpassword-auth.dto';
-import { OAuthRequest } from 'interfaces/common';
+import { OAuthFirstTimeRequest, OAuthRequest } from 'interfaces/common';
 
 @Controller('auth')
 export class AuthController {
@@ -27,6 +27,11 @@ export class AuthController {
   ) {
     const credentials: OAuthRequest = { token, provider };
     return this.authService.loginWithOAuth(credentials);
+  }
+
+  @Put('/oauth/update')
+  async handleOauthFirstLogin(@Body() details: OAuthFirstTimeRequest) {
+    return this.authService.handleOAuthFirstLogin(details);
   }
 
   @Post('reset-password')

@@ -20,16 +20,22 @@ export interface OAuthRequest {
   provider: OAuthProvider;
 }
 
+export interface OAuthFirstTimeRequest {
+  userId: number;
+  username: string;
+  referralCode: string;
+}
+
 export interface Expense {
   description?: string;
-  totalAmount: string;
+  totalAmount: number;
   users: ExpenseUser[];
 }
 
 export interface ExpenseUser {
   id: number;
-  amountPaid?: string;
-  amountOwed: string;
+  amountPaid?: number;
+  amountOwed: number;
   percentage: number;
 }
 

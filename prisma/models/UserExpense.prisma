@@ -2,8 +2,8 @@ model UserExpense {
   id         Int         @id @default(autoincrement())
   userId     Int
   expenseId  Int
-  amountPaid String?    @default("0")  
-  amountOwed String     @default("0")
+  amountPaid Float?    @default(0.00)  
+  amountOwed Float     @default(0.00)
   percentage Float      
   receipt    String?
   isPaid     Boolean       @default(false)

@@ -2,7 +2,7 @@ model Expense {
   id          Int         @id @default(autoincrement())
   splitId     Int        @unique
   description String?
-  totalAmount String      
+  totalAmount Float      
   createdAt   DateTime     @default(now())
   updatedAt   DateTime     @updatedAt
 

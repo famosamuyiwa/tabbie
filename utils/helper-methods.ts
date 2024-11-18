@@ -53,34 +53,59 @@ export async function getSplitsWhere(
   switch (status) {
     case SplitStatus.ACTIVE:
       where = {
-        OR: [{ creatorId: userId }, { users: { some: { userId: userId } } }],
+        OR: [
+          // Creator can see all their records regardless of isPaid
+          {
+            creatorId: userId,
+          },
+          // Non-creators can only see unpaid records they're part of
+          {
+            AND: [
+              { users: { some: { userId: userId } } },
+              { creatorId: { not: userId } }, // Ensure it's not the creator
+              {
+                expense: {
+                  userExpenses: {
+                    some: {
+                      userId,
+                      isPaid: false,
+                    },
+                  },
+                },
+              },
+            ],
+          },
+        ],
         status,
         percentage: {
           not: 100,
-        },
-        expense: {
-          userExpenses: {
-            some: {
-              userId,
-              isPaid: false,
-            },
-          },
         },
       };
       break;
     case SplitStatus.SETTLED:
       where = {
         OR: [
-          { status }, // Fully settled splits
+          // Creators can see all their settled splits
           {
-            expense: {
-              userExpenses: {
-                some: {
-                  userId: userId,
-                  isPaid: true, // Specific user has paid
+            creatorId: userId,
+            status,
+          },
+          // Non-creators only see settled splits where they've paid
+          {
+            AND: [
+              { status },
+              { creatorId: { not: userId } },
+              {
+                expense: {
+                  userExpenses: {
+                    some: {
+                      userId,
+                      isPaid: true,
+                    },
+                  },
                 },
               },
-            },
+            ],
           },
         ],
       };
@@ -164,3 +189,18 @@ function getAllClientIds(
     .map((userId) => clients.get(userId))
     .filter((clientId) => clientId);
 }
+
+export function generateReferralCode(username = '') {
+  // Take the first 3 letters of the username (or a default if unavailable)
+  const prefix = username.slice(0, 3).toUpperCase() || 'USR';
+
+  // Generate a random 6-character alphanumeric string
+  const randomString = Math.random().toString(36).substring(2, 8).toUpperCase();
+
+  // Combine prefix and random string
+  return `${prefix}-${randomString}`;
+}
+
+export const to2DecimalPoints = (value: number) => {
+  return Number(value.toFixed(2));
+};

@@ -1,4 +1,4 @@
-import { IsArray, IsNotEmpty, IsString } from 'class-validator';
+import { IsArray, IsDecimal, IsNotEmpty, IsString } from 'class-validator';
 import { CategoryIcons } from 'enum/common';
 import { Expense } from 'interfaces/common';
 
@@ -14,9 +14,8 @@ export class CreateSplitDTO {
   @IsNotEmpty()
   category: CategoryIcons;
 
-  @IsString()
   @IsNotEmpty()
-  totalAmount: string;
+  totalAmount: number;
 
   expense: Expense;
 

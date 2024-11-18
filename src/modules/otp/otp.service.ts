@@ -1,6 +1,7 @@
 import { HttpException, HttpStatus, Injectable, Logger } from '@nestjs/common';
 import { ResponseStatus } from 'enum/common';
 import { ApiResponse } from 'interfaces/common';
+import { sendOTPVerificationMail } from 'services/smtp';
 import { PrismaService } from 'src/prisma.service';
 
 @Injectable()
@@ -21,6 +22,7 @@ export class OtpService {
     };
     try {
       await this.prisma.otpLog.create({ data: otpLog });
+      sendOTPVerificationMail(email, email, token);
     } catch (err) {
       this.log.error(`${err}`);
 

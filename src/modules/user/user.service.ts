@@ -240,7 +240,7 @@ export class UserService {
         skip: cursor ? 1 : 0, // Skip 1 if using a cursor
         ...(cursor && { cursor: { id: cursor } }), // Use the cursor if provided
         orderBy: {
-          createdAt: 'asc',
+          createdAt: 'desc',
         },
       });
 

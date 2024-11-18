@@ -8,4 +8,6 @@ model Notifications {
     message       String
     type          String
     timestamp     DateTime @default(now())
+    @@map("notifications")
+
 }

@@ -16,4 +16,6 @@ export class CreateAuthDto {
   @IsString()
   @IsNotEmpty()
   password: string;
+
+  referralCode?: string;
 }
