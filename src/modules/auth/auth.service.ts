@@ -7,39 +7,49 @@ import {
   forwardRef,
 } from '@nestjs/common';
 import { CreateAuthDto } from './dto/create-auth.dto';
-import { UpdateAuthDto } from './dto/update-auth.dto';
-import { ApiResponse } from 'interfaces/common';
-import { Model } from 'mongoose';
-import { InjectModel } from '@nestjs/mongoose';
-import * as jwt from 'jsonwebtoken';
+import {
+  ApiResponse,
+  OAuthFirstTimeRequest,
+  OAuthRequest,
+} from 'interfaces/common';
 import * as bcrypt from 'bcrypt';
 import 'dotenv';
-import { QueryBy, ResponseStatus } from 'enum/common';
+import { OAuthProvider, QueryBy, ResponseStatus } from 'enum/common';
 import { UserService } from '../user/user.service';
 import { OtpService } from '../otp/otp.service';
-import { User } from 'schemas/user.schema';
 import { SignInDto } from './dto/signin-auth.dto';
 import { ResetPasswordDto } from './dto/resetpassword-auth.dto';
+import axios from 'axios';
+import { PrismaService } from 'src/prisma.service';
+import { User } from '@prisma/client';
+import { Utils, generateReferralCode } from 'utils/helper-methods';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 
 @Injectable()
 export class AuthService {
   private readonly log = new Logger(AuthService.name);
+  private readonly validationLog: Utils;
+
   constructor(
-    @InjectModel(User.name) private userModel: Model<User>,
     @Inject(forwardRef(() => UserService))
     private readonly userService: UserService, // Inject user service
     @Inject(forwardRef(() => OtpService))
     private readonly otpService: OtpService, // Inject otp service
-  ) {}
+    private readonly prisma: PrismaService,
+    private readonly eventEmitter: EventEmitter2,
+  ) {
+    this.validationLog = new Utils(this.eventEmitter);
+  }
 
   async register(userDetails: CreateAuthDto): Promise<ApiResponse<User>> {
     try {
       this.log.log('Retrieving all users...');
 
-      const { username, email, password } = userDetails;
+      const { username, email, password, name, referralCode } = userDetails;
+      let referrer: User = null;
 
-      const userExist = await this.userModel.findOne({
-        $or: [{ username }, { email }],
+      const userExist = await this.prisma.user.findFirst({
+        where: { username, email },
       });
 
       if (userExist) {
@@ -49,15 +59,45 @@ export class AuthService {
         );
       }
 
-      const newUser = new this.userModel({
+      if (referralCode) {
+        referrer = await this.prisma.user.findFirst({
+          where: { referralCode },
+        });
+        if (referrer) {
+          await this.prisma.user.update({
+            where: { id: referrer.id },
+            data: {
+              referralPoints: { increment: 100 },
+              referralCount: { increment: 1 },
+            },
+          });
+        } else {
+          throw new HttpException(
+            `Referral code is invalid`,
+            HttpStatus.BAD_REQUEST,
+          );
+        }
+      }
+
+      const hashedPassword = await bcrypt.hash(password, 10);
+      const myReferralCode = generateReferralCode(username);
+
+      const newUser = {
+        name,
         username,
         email,
-        password,
-      });
+        referralCode: myReferralCode,
+        referredById: referrer.id ?? null,
+      };
 
-      const user = await newUser.save();
+      const user = await this.prisma.user.create({ data: newUser });
 
-      delete user.password;
+      const newUserAuth = {
+        userId: user.id,
+        password: hashedPassword,
+      };
+
+      await this.prisma.userAuth.create({ data: newUserAuth });
 
       const payload: ApiResponse<User> = {
         code: HttpStatus.CREATED,
@@ -65,7 +105,12 @@ export class AuthService {
         message: 'user created successfully',
         data: user,
       };
-
+      this.validationLog.createValidationLogEvent({
+        uniqueId: '',
+        status: '',
+        message: '',
+        field: '',
+      });
       return payload;
     } catch (err) {
       this.log.error(`${err}`);
@@ -83,12 +128,14 @@ export class AuthService {
     try {
       const { emailOrUsername, password } = userDetails;
       // Check if username exists
-      const user = await this.userModel.findOne({
-        $or: [{ username: emailOrUsername }, { email: emailOrUsername }],
+      const user = await this.prisma.user.findFirst({
+        where: {
+          OR: [{ username: emailOrUsername }, { email: emailOrUsername }],
+        },
+        include: {
+          auth: true,
+        },
       });
-
-      // console.log(user);
-
       if (!user) {
         throw new HttpException(
           `Invalid username or password!`,
@@ -97,7 +144,10 @@ export class AuthService {
       }
 
       //check if password matches
-      const isValidPassword = await bcrypt.compare(password, user.password);
+      const isValidPassword = await bcrypt.compare(
+        password,
+        user.auth.password,
+      );
 
       if (!isValidPassword) {
         throw new HttpException(
@@ -106,7 +156,8 @@ export class AuthService {
         );
       }
 
-      delete user.password;
+      //don't return auth details along with user
+      delete user.auth;
 
       const payload: ApiResponse<User> = {
         code: HttpStatus.CREATED,
@@ -128,14 +179,45 @@ export class AuthService {
     }
   }
 
-  async googleLogin(req): Promise<ApiResponse<User>> {
+  async loginWithOAuth(credentials: OAuthRequest): Promise<ApiResponse<User>> {
+    let user: User;
+    const { token, provider } = credentials;
+    if (!token) return;
+    let url = '';
+
+    switch (provider) {
+      case OAuthProvider.GOOGLE:
+        url = 'https://www.googleapis.com/userinfo/v2/me';
+        break;
+      default:
+        return;
+    }
+
     try {
-      if (!req.user) {
-        throw new HttpException(`User not found: Google`, HttpStatus.NOT_FOUND);
+      const { data } = await axios.get(url, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      if (!data) {
+        throw new HttpException(
+          'OAuthExceptionError: Something went wrong while fetching user data',
+          HttpStatus.EXPECTATION_FAILED,
+        );
       }
+      // Check if username exists
+      user = await this.prisma.user.findFirst({ where: { email: data.email } });
+      if (!user) {
+        const myReferralCode = generateReferralCode(data.name);
 
-      const user = await this.userModel.findOne({ email: req.user.email });
-
+        const newUser = {
+          name: data.name,
+          email: data.email,
+          referralCode: myReferralCode,
+        };
+        user = await this.prisma.user.create({ data: newUser });
+        user['firstLogin'] = true;
+      }
       const payload: ApiResponse<User> = {
         code: HttpStatus.CREATED,
         status: ResponseStatus.SUCCESS,
@@ -156,24 +238,96 @@ export class AuthService {
     }
   }
 
-  async resetPassword(details: ResetPasswordDto): Promise<ApiResponse<any>> {
+  async handleOAuthFirstLogin(
+    credentials: OAuthFirstTimeRequest,
+  ): Promise<ApiResponse<User>> {
+    let user: User;
+    let referrer: User;
+    const { userId, username, referralCode } = credentials;
+    if (!username) return;
+
     try {
-      // check if user exists
-      let { email, password } = details;
+      const userExist = await this.prisma.user.findFirst({
+        where: { username },
+      });
 
-      password = await bcrypt.hash(password, 10);
+      if (userExist) {
+        throw new HttpException(`Username already exists`, HttpStatus.CONFLICT);
+      }
 
-      const userExists = await this.userModel.findOneAndUpdate(
-        { email },
-        { password },
-      );
+      if (referralCode) {
+        referrer = await this.prisma.user.findFirst({
+          where: { referralCode },
+        });
+        if (referrer) {
+          await this.prisma.user.update({
+            where: { id: referrer.id },
+            data: {
+              referralPoints: { increment: 100 },
+              referralCount: { increment: 1 },
+            },
+          });
+        } else {
+          throw new HttpException(
+            `Referral code is invalid`,
+            HttpStatus.BAD_REQUEST,
+          );
+        }
+      }
 
-      if (!userExists) {
+      user = await this.prisma.user.update({
+        where: { id: userId },
+        data: {
+          username,
+          referredById: referrer.id ?? null,
+        },
+      });
+
+      const payload: ApiResponse<User> = {
+        code: HttpStatus.CREATED,
+        status: ResponseStatus.SUCCESS,
+        message: 'user updated successfully',
+        data: user,
+      };
+
+      return payload;
+    } catch (err) {
+      this.log.error(`${err}`);
+
+      // Check if the error is a ConflictException
+      if (err instanceof HttpException) {
+        throw err; // Re-throw the Conflict exception
+      } else {
+        throw new HttpException(err, HttpStatus.INTERNAL_SERVER_ERROR);
+      }
+    }
+  }
+
+  async resetPassword(details: ResetPasswordDto): Promise<ApiResponse> {
+    try {
+      const { email, password } = details;
+
+      // Check if the user exists by querying the User model
+      const user = await this.prisma.user.findUnique({
+        where: { email },
+        select: { id: true }, // Only select the id, as we only need it for UserAuth
+      });
+
+      if (!user) {
         throw new HttpException(
           `User: ${email} not found!`,
           HttpStatus.NOT_FOUND,
         );
       }
+
+      // Hash the new password
+      const hashedPassword = await bcrypt.hash(password, 10);
+
+      // Update the password in UserAuth
+      await this.prisma.userAuth.update({
+        where: { userId: user.id },
+        data: { password: hashedPassword },
+      });
 
       const payload: ApiResponse<any> = {
         code: HttpStatus.CREATED,
@@ -181,13 +335,13 @@ export class AuthService {
         message: 'Password successfully updated',
         data: null,
       };
+
       return payload;
     } catch (err) {
       this.log.error(`${err}`);
 
-      // Check if the error is a ConflictException
       if (err instanceof HttpException) {
-        throw err; // Re-throw the Conflict exception
+        throw err;
       } else {
         throw new HttpException(err, HttpStatus.INTERNAL_SERVER_ERROR);
       }

@@ -1,4 +1,4 @@
-// import { User } from 'schemas/user.schema';
+import { CategoryIcons, NotificationType, OAuthProvider } from 'enum/common';
 
 export interface ApiResponse<T = any> {
   code: number;
@@ -15,15 +15,42 @@ export interface ChatMessage {
   timestamp: Date;
 }
 
-// export interface SignupResponse {
-//   user: User;
-//   token: string;
-// }
+export interface OAuthRequest {
+  token: string;
+  provider: OAuthProvider;
+}
 
-// export interface User extends Document {
-//   _id: string;
-//   firstname: string;
-//   lastname: string;
-//   email: string;
-//   password: string;
-// }
+export interface OAuthFirstTimeRequest {
+  userId: number;
+  username: string;
+  referralCode: string;
+}
+
+export interface Expense {
+  description?: string;
+  totalAmount: number;
+  users: ExpenseUser[];
+}
+
+export interface ExpenseUser {
+  id: number;
+  amountPaid?: number;
+  amountOwed: number;
+  percentage: number;
+}
+
+export interface MarkAsPaid {
+  expenseIds: number[];
+  splitId: number;
+  receipt?: string;
+  creatorId: string;
+  userId: string;
+}
+
+export interface Notification {
+  category?: CategoryIcons;
+  avatar?: string;
+  message: string;
+  type: NotificationType;
+  timestamp: Date;
+}

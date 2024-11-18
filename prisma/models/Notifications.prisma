@@ -1,0 +1,13 @@
+model Notifications {
+    id            Int      @id @default(autoincrement())
+    recipientId        Int      // Recipient user ID
+    contextType   String   // e.g., "SPLIT", "FRIEND_REQUEST", "GENERAL"
+    contextId     Int?     // ID of the related entity (split ID, friend request ID)
+    category      String?  // Optional for additional categorization if needed
+    avatar String?
+    message       String
+    type          String
+    timestamp     DateTime @default(now())
+    @@map("notifications")
+
+}

@@ -1,0 +1,20 @@
+model Split {
+  id         Int          @id @default(autoincrement())
+  name       String
+  category   String
+  totalAmount Float      
+  percentage Float?       @default(0)
+  creatorId Int      
+  status String @default("ACTIVE")
+  createdAt  DateTime      @default(now()) 
+  updatedAt  DateTime      @updatedAt
+
+  creator   User     @relation("CreatedSplits", fields: [creatorId], references: [id])  // Link to User entity  
+  expense   Expense?
+  users      SplitUser[]
+
+  @@map("split")
+  @@index([id])
+  @@index([creatorId])
+  @@index([createdAt])
+}
