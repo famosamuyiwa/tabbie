@@ -1,0 +1,16 @@
+model Friends {
+  id        Int     @id @default(autoincrement())
+  userId    Int
+  friendId  Int
+  createdAt DateTime @default(now()) 
+
+  user      User     @relation("UserFriends", fields: [userId], references: [id])
+  friend    User     @relation("Friendships", fields: [friendId], references: [id])
+
+  
+  @@map("friends")
+  @@unique([userId, friendId]) // Prevent duplicate friendships
+  @@index([userId])
+  @@index([friendId])
+  @@index([createdAt])
+}

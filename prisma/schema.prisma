@@ -1,0 +1,180 @@
+
+datasource db {
+  provider = "postgresql" // or your DB provider
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+
+model Expense {
+  id          Int         @id @default(autoincrement())
+  splitId     Int        @unique
+  description String?
+  totalAmount Float      
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+
+  split       Split        @relation(fields: [splitId], references: [id], onDelete: Cascade)
+  userExpenses UserExpense[]
+
+  @@map("expense")
+  @@index([splitId])
+  @@index([createdAt])
+}
+
+model Friends {
+  id        Int     @id @default(autoincrement())
+  userId    Int
+  friendId  Int
+  createdAt DateTime @default(now()) 
+
+  user      User     @relation("UserFriends", fields: [userId], references: [id])
+  friend    User     @relation("Friendships", fields: [friendId], references: [id])
+
+  
+  @@map("friends")
+  @@unique([userId, friendId]) // Prevent duplicate friendships
+  @@index([userId])
+  @@index([friendId])
+  @@index([createdAt])
+}
+
+model Notifications {
+    id            Int      @id @default(autoincrement())
+    recipientId        Int      // Recipient user ID
+    contextType   String   // e.g., "SPLIT", "FRIEND_REQUEST", "GENERAL"
+    contextId     Int?     // ID of the related entity (split ID, friend request ID)
+    category      String?  // Optional for additional categorization if needed
+    avatar String?
+    message       String
+    type          String
+    timestamp     DateTime @default(now())
+    @@map("notifications")
+
+}
+
+model OtpLog {
+    id Int @id @default(autoincrement())
+    configLength String
+    token String
+    email String
+    lifetime DateTime
+    isDeactivated Boolean
+    createdAt    DateTime @default(now())
+    updatedAt    DateTime @updatedAt 
+
+  @@map("otp_log")
+}
+model Split {
+  id         Int          @id @default(autoincrement())
+  name       String
+  category   String
+  totalAmount Float      
+  percentage Float?       @default(0)
+  creatorId Int      
+  status String @default("ACTIVE")
+  createdAt  DateTime      @default(now()) 
+  updatedAt  DateTime      @updatedAt
+
+  creator   User     @relation("CreatedSplits", fields: [creatorId], references: [id])  // Link to User entity  
+  expense   Expense?
+  users      SplitUser[]
+
+  @@map("split")
+  @@index([id])
+  @@index([creatorId])
+  @@index([createdAt])
+}
+
+model SplitUser {
+  id        Int     @default(autoincrement())
+  splitId   Int
+  userId    Int
+  createdAt DateTime @default(now()) 
+
+  split     Split  @relation(fields: [splitId], references: [id], onDelete: Cascade)
+  user      User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([splitId, userId])
+  @@map("split_users")
+}
+
+ model User {
+  id        Int       @id @default(autoincrement())
+  username  String?   @unique
+  name      String
+  email     String    @unique
+  avatar    String?
+  phoneNumber    String?
+  referralCode     String?       @unique
+  referredById     Int?
+  referralPoints   Int           @default(0) // Field to track referral points
+  referralCount Int @default(0)
+  lastLogin DateTime?
+  createdAt DateTime @default(now())
+  updatedAt DateTime  @default(now())
+  
+  referredBy       User?         @relation("UserReferrals", fields: [referredById], references: [id])
+  referrals        User[]        @relation("UserReferrals")
+  friends   Friends[]  @relation("UserFriends")
+  beFriends Friends[]  @relation("Friendships")
+  expenses  UserExpense[]
+  participantSplits    SplitUser[]
+  createdSplits    Split[]  @relation("CreatedSplits")  // Relation field for splits created by the user
+  auth           UserAuth?  @relation("UserAuthRelation")
+
+
+  @@index([email])
+  @@index([id])
+  @@index([createdAt])
+  @@map("user")
+}
+
+
+model UserAuth {
+  userId         Int       @id
+  password       String?
+  
+  // Relation field back to User
+  user           User      @relation("UserAuthRelation", fields: [userId], references: [id]) 
+  @@map("user_auth")
+
+}
+model UserExpense {
+  id         Int         @id @default(autoincrement())
+  userId     Int
+  expenseId  Int
+  amountPaid Float?    @default(0.00)  
+  amountOwed Float     @default(0.00)
+  percentage Float      
+  receipt    String?
+  isPaid     Boolean       @default(false)
+  status     String         @default("UNPAID")
+  createdAt  DateTime     @default(now()) 
+  updatedAt  DateTime     @updatedAt
+
+  user       User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expense    Expense      @relation(fields: [expenseId], references: [id], onDelete: Cascade)
+
+  @@map("user_expenses")
+  @@index([expenseId])
+  @@index([userId])
+  @@index([createdAt])
+  @@index([expenseId, userId]) // Composite index
+
+}
+
+model ValidationLog {
+    id Int @id @default(autoincrement())
+    uniqueId String
+    status String
+    message String
+    field String
+    createdAt DateTime @default(now()) 
+    updatedAt DateTime @updatedAt 
+
+  @@map("validation_log")
+}

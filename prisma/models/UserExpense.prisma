@@ -1,0 +1,23 @@
+model UserExpense {
+  id         Int         @id @default(autoincrement())
+  userId     Int
+  expenseId  Int
+  amountPaid Float?    @default(0.00)  
+  amountOwed Float     @default(0.00)
+  percentage Float      
+  receipt    String?
+  isPaid     Boolean       @default(false)
+  status     String         @default("UNPAID")
+  createdAt  DateTime     @default(now()) 
+  updatedAt  DateTime     @updatedAt
+
+  user       User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expense    Expense      @relation(fields: [expenseId], references: [id], onDelete: Cascade)
+
+  @@map("user_expenses")
+  @@index([expenseId])
+  @@index([userId])
+  @@index([createdAt])
+  @@index([expenseId, userId]) // Composite index
+
+}
