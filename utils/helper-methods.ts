@@ -90,10 +90,9 @@ export async function getSplitsWhere(
             creatorId: userId,
             status,
           },
-          // Non-creators only see settled splits where they've paid
+          // Non-creators can see splits they've paid for
           {
             AND: [
-              { status },
               { creatorId: { not: userId } },
               {
                 expense: {

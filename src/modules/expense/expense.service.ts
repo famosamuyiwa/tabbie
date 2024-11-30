@@ -49,10 +49,6 @@ export class ExpenseService {
         HttpStatus.BAD_REQUEST,
       );
     }
-    console.log('expenseIds: ', expenseIds);
-    console.log('splitId: ', splitId);
-    console.log('userId: ', userId);
-    console.log('creatorId: ', creatorId);
     try {
       const result = await this.prisma.userExpense.updateMany({
         where: {
