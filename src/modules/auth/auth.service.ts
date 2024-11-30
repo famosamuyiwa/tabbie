@@ -181,43 +181,25 @@ export class AuthService {
 
   async loginWithOAuth(credentials: OAuthRequest): Promise<ApiResponse<User>> {
     let user: User;
-    const { token, provider } = credentials;
-    if (!token) return;
-    let url = '';
-
-    switch (provider) {
-      case OAuthProvider.GOOGLE:
-        url = 'https://www.googleapis.com/userinfo/v2/me';
-        break;
-      default:
-        return;
-    }
+    const { provider, name, email } = credentials;
+    if (!provider || !name || !email) return;
 
     try {
-      const { data } = await axios.get(url, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-      if (!data) {
-        throw new HttpException(
-          'OAuthExceptionError: Something went wrong while fetching user data',
-          HttpStatus.EXPECTATION_FAILED,
-        );
-      }
       // Check if username exists
-      user = await this.prisma.user.findFirst({ where: { email: data.email } });
+      user = await this.prisma.user.findFirst({ where: { email } });
+
       if (!user) {
-        const myReferralCode = generateReferralCode(data.name);
+        const myReferralCode = generateReferralCode(name);
 
         const newUser = {
-          name: data.name,
-          email: data.email,
+          name: name,
+          email: email,
           referralCode: myReferralCode,
         };
         user = await this.prisma.user.create({ data: newUser });
         user['firstLogin'] = true;
       }
+
       const payload: ApiResponse<User> = {
         code: HttpStatus.CREATED,
         status: ResponseStatus.SUCCESS,

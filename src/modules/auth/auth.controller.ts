@@ -20,13 +20,9 @@ export class AuthController {
     return this.authService.login(user);
   }
 
-  @Get('/oauth/:token')
-  async loginWithOAuth(
-    @Param('token') token: string,
-    @Query('provider') provider: OAuthProvider,
-  ) {
-    const credentials: OAuthRequest = { token, provider };
-    return this.authService.loginWithOAuth(credentials);
+  @Post('/oauth')
+  async loginWithOAuth(@Body() details: OAuthRequest) {
+    return this.authService.loginWithOAuth(details);
   }
 
   @Put('/oauth/update')

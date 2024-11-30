@@ -16,8 +16,9 @@ export interface ChatMessage {
 }
 
 export interface OAuthRequest {
-  token: string;
   provider: OAuthProvider;
+  name: string;
+  email: string;
 }
 
 export interface OAuthFirstTimeRequest {
